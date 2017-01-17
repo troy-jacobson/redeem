@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 This is an implementation of the PWM DAC
-It has a second order low pass filter 
+It has a second order low pass filter
 giving a ripple voltage of less than 1 mV
 
 Author: Elias Bakken
@@ -34,8 +34,11 @@ try:
 except ImportError:
     pass
 
+
 class PWM_DAC(PWM):
-    """ This class implements a DAC using a PWM and a second order low pass filter """
+    """
+    This class implements a DAC using a PWM and a second order low pass filter
+    """
 
     def __init__(self, channel):
         """ Channel is the pwm output is on (0..15) """
@@ -68,7 +71,7 @@ class DAC():
             self.spi2_0 = None
 
     def set_voltage(self, voltage):
-        logging.debug("Setting voltage to "+str(voltage))         
+        logging.debug("Setting voltage to "+str(voltage))
         if self.spi2_0 is None:
             logging.debug("SPI2_0 missing")
             return
@@ -80,6 +83,7 @@ class DAC():
         self.spi2_0.writebytes([byte1, byte2])       # Update all channels
         self.spi2_0.writebytes([0xA0, 0xFF])
 
+
 if __name__ == '__main__':
     PWM.set_frequency(100)
 
@@ -87,4 +91,3 @@ if __name__ == '__main__':
     for i in range(5):
         dacs[i] = PWM_DAC(11+i)
         dacs[i].set_voltage(1.5)
-
