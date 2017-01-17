@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-A watchdog with a timer and a reset switch that will disable 
-the steppers if it is not poked within a predefined time. 
+A watchdog with a timer and a reset switch that will disable
+the steppers if it is not poked within a predefined time.
 
 Author: Elias Bakken
 
@@ -21,6 +21,7 @@ Author: Elias Bakken
 from threading import Thread, Lock
 import time
 import logging
+
 
 class StepperWatchdog:
 
@@ -47,7 +48,7 @@ class StepperWatchdog:
             self.running = False
             self.t.join()
         else:
-            logging.debug("Attempted to stop StepperWatchdog when it is not running")
+            logging.debug("Attempt to stop StepperWatchdog while not running")
 
     def reset(self):
         self.lock.acquire()
@@ -55,8 +56,8 @@ class StepperWatchdog:
         self.lock.release()
 
     def _run(self):
-        """ While more time on the clock, 
-        stay in the inner loop. If not, carry out the 
+        """ While more time on the clock,
+        stay in the inner loop. If not, carry out the
         timeout function """
         while self.running:
             if self.time_left:
@@ -66,7 +67,7 @@ class StepperWatchdog:
                     self.time_left -= 1
                     self.lock.release()
                 self._on_timeout()
-            else:      
+            else:
                 time.sleep(1)
 
     def _on_timeout(self):
@@ -79,13 +80,14 @@ class StepperWatchdog:
                 # Stepper should be enabled, but is not.
                 stepper.set_disabled(True)  # Force update
 
+
 if __name__ == '__main__':
+    loggingformat = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
     logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M')
+                        format=loggingformat,
+                        datefmt='%m-%d %H:%M')
     swd = StepperWatchdog(None, 3)
     swd.start()
     swd.reset()
     time.sleep(4)
     swd.stop()
-
