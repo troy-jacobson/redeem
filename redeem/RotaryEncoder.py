@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-This file is for adding support to rotary encoders, 
-for more information see Wikipedia: 
+This file is for adding support to rotary encoders,
+for more information see Wikipedia:
 https://en.wikipedia.org/wiki/Rotary_encoder
 
 Author: Elias Bakken
@@ -29,7 +29,7 @@ import logging
 class RotaryEncoder:
     def __init__(self, dev, cpr, d):
         self.dev = InputDevice(dev)
-        self.cpr = float(cpr) # Cycles pr revolution
+        self.cpr = float(cpr)  # Cycles pr revolution
         self.d = d
         self.distance = 0
         self.step = 0
@@ -49,9 +49,11 @@ class RotaryEncoder:
             if event.type == ecodes.EV_REL:
                 self.step += event.value
                 self.rounds = self.step/self.cpr
-                self.distance = self.rounds*math.pi*self.d if self.rounds != 0 else 0
+                distance = self.rounds * math.pi * self.d
+                self.distance = distance if distance != 0 else 0
             if not self.running:
                 break
+
 
 if __name__ == '__main__':
     r = RotaryEncoder("/dev/input/event1", 360, 3)
