@@ -38,7 +38,7 @@ class USB:
             return
         self.running = True
         self.t = Thread(target=self.get_message, name="USB")
-        self.t.start()		
+        self.t.start()
 
     def get_message(self):
         """ Loop that gets messages and pushes them on the queue """
@@ -49,7 +49,7 @@ class USB:
                 if len(message) > 0:
                     g = Gcode({"message": message, "prot": "USB"})
                     self.printer.processor.enqueue(g)
-                    # Do not enable sending messages until a 
+                    # Do not enable sending messages until a
                     # message has been received
                     self.send_response = True
 
@@ -58,7 +58,7 @@ class USB:
         if self.send_response:
             if message[-1] != "\n":
                 message += "\n"
-            #logging.debug("USB: "+str(message))
+            # logging.debug("USB: "+str(message))
             self.tty.write(message)
 
     def close(self):
