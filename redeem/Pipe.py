@@ -51,7 +51,8 @@ class Pipe:
 
         # Ensure tty0tty is installed and available in the PATH
         if not Pipe.check_tty0tty() and not Pipe.check_socat():
-            logging.error("Neither tty0tty nor socat found! tty0tty or socat must be installed")
+            logging.error(("Neither tty0tty nor socat found! "
+                           "tty0tty or socat must be installed"))
             raise EnvironmentError("tty0tty and socat not found")
 
         if Pipe.check_tty0tty():
@@ -61,7 +62,7 @@ class Pipe:
 
         elif Pipe.check_socat():
             p = subprocess.Popen([
-                "socat", "-d", "-d", "-lf", "/var/log/redeem2"+self.prot, 
+                "socat", "-d", "-d", "-lf", "/var/log/redeem2"+self.prot,
                 "pty,mode=777,raw,echo=0,link="+pipe_0,
                 "pty,mode=777,raw,echo=0,link="+pipe_1],
                                  stderr=subprocess.PIPE)
@@ -83,7 +84,7 @@ class Pipe:
             r, w, x = select.select([self.rd], [], [], 1.0)
             if r:
                 try:
-                    message = self.rd.readline().rstrip()                
+                    message = self.rd.readline().rstrip()
                     if len(message) > 0:
                         g = Gcode({"message": message, "prot": self.prot})
                         self.printer.processor.enqueue(g)
@@ -92,15 +93,13 @@ class Pipe:
 
     def send_message(self, message):
         if self.send_response:
-            #logging.debug("Pipe: "+str(message))
+            # logging.debug("Pipe: "+str(message))
             if message[-1] != "\n":
                 message += "\n"
                 try:
                     os.write(self.wr, message)
                 except OSError:
                     logging.warning("Unable to write to file. Closing down?")
-
-
 
     def close(self):
         self.running = False
