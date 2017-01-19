@@ -21,7 +21,8 @@ License: GNU GPL v3: http://www.gnu.org/copyleft/gpl.html
  along with Redeem.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from Adafruit_I2C import Adafruit_I2C 
+
+from Adafruit_I2C import Adafruit_I2C
 import time
 import subprocess
 
@@ -36,21 +37,19 @@ class PWM(object):
 
     def __init__(self, channel):
         self.channel = channel
-    
+
     def set_value(self, value):
         PWM.set_value(value, self.channel)
-
 
     @staticmethod
     def __init_pwm():
         kernel_version = subprocess.check_output(["uname", "-r"]).strip()
         [major, minor, rev] = kernel_version.split("-")[0].split(".")
-        if (int(major) == 3 and int(minor) >= 14) or int(major) > 3 :
+        if (int(major) == 3 and int(minor) >= 14) or int(major) > 3:
             PWM.i2c = Adafruit_I2C(0x70, 2, False)  # Open device
         else:
             PWM.i2c = Adafruit_I2C(0x70, 1, False)  # Open device
         PWM.i2c.write8(PWM.PCA9685_MODE1, 0x01)    # Reset
-
 
     @staticmethod
     def set_frequency(freq):
@@ -81,25 +80,26 @@ class PWM(object):
         byte_list = [0x00, 0x00, off & 0xFF, off >> 8]
         PWM.i2c.writeList(0x06+(4*channel), byte_list)
 
+
 if __name__ == '__main__':
     import os
     import logging
     import numpy as np
 
+    logformat = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+    logdatefmt = '%m-%d %H:%M'
     logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                        datefmt='%m-%d %H:%M')
+                        format=logformat,
+                        datefmt=logdatefmt)
 
-    exp = 2.3   
+    exp = 2.3
 
     PWM.set_frequency(1000)
     while True:
         for i in np.linspace(0.0, 6.28, 100):
-            logging.info((0.5+0.5*np.sin(i)))        
+            logging.info((0.5+0.5*np.sin(i)))
             PWM.set_value((0.5+0.5*np.sin(i+0.0*np.pi/2.0))**exp, 7)
             PWM.set_value((0.5+0.5*np.sin(i+1.0*np.pi/2.0))**exp, 8)
             PWM.set_value((0.5+0.5*np.sin(i+2.0*np.pi/2.0))**exp, 9)
             PWM.set_value((0.5+0.5*np.sin(i+3.0*np.pi/2.0))**exp, 10)
             time.sleep(0.01)
-
-
