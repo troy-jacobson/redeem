@@ -1,7 +1,7 @@
 """
 PruInterface.py file for Replicape.
 
-Handles direct manipulation of registers in Python-PRU.  
+Handles direct manipulation of registers in Python-PRU.
 
 License: GNU GPL v3: http://www.gnu.org/copyleft/gpl.html
 
@@ -26,11 +26,10 @@ import logging
 import struct
 import mmap
 
-PRU_ICSS = 0x4A300000 
+PRU_ICSS = 0x4A300000
 PRU_ICSS_LEN = 512*1024
 SHARED_RAM_START = 0x00012000
 
-# 
 
 class PruInterface:
     @staticmethod
@@ -40,7 +39,7 @@ class PruInterface:
             ddr_mem = mmap.mmap(f.fileno(), PRU_ICSS_LEN, offset=PRU_ICSS)
             lon = struct.unpack('L', ddr_mem[SHARED_RAM_START+offset:SHARED_RAM_START + offset + 4])
         return lon[0]
-        
+
     @staticmethod
     def set_shared_long(offset, L):
         with open("/dev/mem", "r+b") as f:
@@ -48,18 +47,18 @@ class PruInterface:
             lon = struct.pack('L', L)
             ddr_mem[SHARED_RAM_START+offset:SHARED_RAM_START + offset + 4] = lon
         return
-        
+
     @staticmethod
     def set_active_endstops(L):
         PruInterface.set_shared_long(8, L)
-        return 
-    
+        return
+
     @staticmethod
     def get_steps_remaining():
         return PruInterface.get_shared_long(16)
-        
-#        with open("/dev/mem", "r+b") as f:	       
-#            ddr_mem = mmap.mmap(f.fileno(), PRU_ICSS_LEN, offset=PRU_ICSS) 
+
+#        with open("/dev/mem", "r+b") as f:
+#            ddr_mem = mmap.mmap(f.fileno(), PRU_ICSS_LEN, offset=PRU_ICSS)
 #            shared = struct.unpack('LLLL', ddr_mem[SHARED_RAM_START:SHARED_RAM_START+16])
 #            steps_remaining = shared[3]
 #        return steps_remaining
