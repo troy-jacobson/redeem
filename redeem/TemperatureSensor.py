@@ -197,7 +197,7 @@ class PT100(TemperatureSensor):
     def get_temperature(self, voltage):
         """ Return the temperature in degrees celsius. """
         r = self.voltage_to_resistance(voltage)
-        c = (-self.A + np.sqrt(self.A**2 - 4*self.B*(1-r/self.R0)))/(2*self.B)
+        c = (-self.A + np.sqrt(self.A**2 - 4 * self.B * (1 - r / self.R0))) / (2 * self.B)
         return c
 
 
@@ -215,4 +215,4 @@ class Tboard (TemperatureSensor):
         logging.debug(msg.format(pin, sensorConfiguration[1]))
 
     def get_temperature(self, voltage):
-        return voltage/self.voltage_pr_degree
+        return voltage / self.voltage_pr_degree
