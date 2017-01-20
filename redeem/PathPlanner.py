@@ -539,6 +539,7 @@ class PathPlanner:
             #        ].get_steps_pr_meter()
             # self.native_planner.setExtruder(ext_nr)
 
+
 """
 # needs updating after the changes to Path and Printer
 if __name__ == '__main__':
@@ -546,9 +547,11 @@ if __name__ == '__main__':
     import os
     from CascadingConfigParser import CascadingConfigParser
 
+    logformat = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+    logdatefmt = '%m-%d %H:%M'
     logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                        datefmt='%m-%d %H:%M')
+                        format=logformat,
+                        datefmt=logdatefmt)
 
     from Stepper import Stepper, Stepper_00B1
     from PruFirmware import PruFirmware
@@ -562,19 +565,24 @@ if __name__ == '__main__':
 
     steppers = {}
 
-    steppers["X"] = Stepper_00B1("GPIO0_27", "GPIO1_29", "GPIO2_4", 11, 0, "X", 0, 0)
+    steppers["X"] = Stepper_00B1("GPIO0_27", "GPIO1_29", "GPIO2_4",
+                                 11, 0, "X", 0, 0)
     steppers["X"].set_microstepping(2)
     steppers["X"].set_steps_pr_mm(6.0)
-    steppers["Y"] = Stepper_00B1("GPIO1_12", "GPIO0_22", "GPIO2_5", 12, 1, "Y", 1, 1)
+    steppers["Y"] = Stepper_00B1("GPIO1_12", "GPIO0_22", "GPIO2_5",
+                                 12, 1, "Y", 1, 1)
     steppers["Y"].set_microstepping(2)
     steppers["Y"].set_steps_pr_mm(6.0)
-    steppers["Z"] = Stepper_00B1("GPIO0_23", "GPIO0_26", "GPIO0_15", 13, 2, "Z", 2, 2)
+    steppers["Z"] = Stepper_00B1("GPIO0_23", "GPIO0_26", "GPIO0_15",
+                                 13, 2, "Z", 2, 2)
     steppers["Z"].set_microstepping(2)
     steppers["Z"].set_steps_pr_mm(160.0)
-    steppers["E"] = Stepper_00B1("GPIO1_28", "GPIO1_15", "GPIO2_1", 14, 3, "E", 3, 3)
+    steppers["E"] = Stepper_00B1("GPIO1_28", "GPIO1_15", "GPIO2_1",
+                                 14, 3, "E", 3, 3)
     steppers["E"].set_microstepping(2)
     steppers["E"].set_steps_pr_mm(5.0)
-    steppers["H"] = Stepper_00B1("GPIO1_13", "GPIO1_14", "GPIO2_3", 15, 4, "H", 4, 4)
+    steppers["H"] = Stepper_00B1("GPIO1_13", "GPIO1_14", "GPIO2_3",
+                                 15, 4, "H", 4, 4)
     steppers["H"].set_microstepping(2)
     steppers["H"].set_steps_pr_mm(5.0)
 

@@ -64,8 +64,9 @@ class CascadingConfigParser(ConfigParser.SafeConfigParser):
 
         import glob
         paths = glob.glob("/sys/bus/i2c/devices/[1-2]-005[4-7]/*/nvmem")
-        paths.extend(glob.glob("/sys/bus/i2c/devices/[1-2]-005[4-7]/nvmem/at24-[1-4]/nvmem"))
-        #paths.append(glob.glob("/sys/bus/i2c/devices/[1-2]-005[4-7]/eeprom"))
+        extpath = "/sys/bus/i2c/devices/[1-2]-005[4-7]/nvmem/at24-[1-4]/nvmem"
+        paths.extend(glob.glob(extpath))
+        # paths.append(glob.glob("/sys/bus/i2c/devices/[1-2]-005[4-7]/eeprom"))
         for i, path in enumerate(paths):
             try:
                 with open(path, "rb") as f:
@@ -79,7 +80,8 @@ class CascadingConfigParser(ConfigParser.SafeConfigParser):
                         self.reach_revision = data[38:42]
                         self.reach_data = data
                         self.reach_path = path
-                    if self.replicape_revision != None and self.reach_revision != None:
+                    if (self.replicape_revision is not None
+                       and self.reach_revision is not None):
                         break
             except IOError as e:
                 pass
@@ -92,7 +94,7 @@ class CascadingConfigParser(ConfigParser.SafeConfigParser):
         # Get list of changed values
         to_save = []
         for section in self.sections():
-            #logging.debug(section)
+            # logging.debug(section)
             for option in self.options(section):
                 if self.get(section, option) != current.get(section, option):
                     old = current.get(section, option)
@@ -107,31 +109,32 @@ class CascadingConfigParser(ConfigParser.SafeConfigParser):
             if not local.has_section(section):
                 local.add_section(section)
             local.set(section, option, value)
-            logging.info("Update setting: {} from {} to {} ".format(option, old, value))
-
+            msg = "Update setting: {} from {} to {} "
+            logging.info(msg.format(option, old, value))
 
         # Save changed values to file
         local.write(open(filename, "w+"))
-
 
     def check(self, filename):
         """ Check the settings currently set against default.cfg """
         default = ConfigParser.SafeConfigParser()
         default.readfp(open("/etc/redeem/default.cfg"))
-        local   = ConfigParser.SafeConfigParser()
+        local = ConfigParser.SafeConfigParser()
         local.readfp(open(filename))
 
         local_ok = True
         diff = set(local.sections())-set(default.sections())
         for section in diff:
-            logging.warning("Section {} does not exist in {}".format(section, "default.cfg"))
+            msg = "Section {} does not exist in {}"
+            logging.warning(msg.format(section, "default.cfg"))
             local_ok = False
         for section in local.sections():
             if not default.has_section(section):
                 continue
             diff = set(local.options(section))-set(default.options(section))
             for option in diff:
-                logging.warning("Option {} in section {} does not exist in {}".format(option, section, "default.cfg"))
+                msg = "Option {} in section {} does not exist in {}"
+                logging.warning(msg.format(option, section, "default.cfg"))
                 local_ok = False
         if local_ok:
             logging.info("{} is OK".format(filename))
@@ -141,16 +144,19 @@ class CascadingConfigParser(ConfigParser.SafeConfigParser):
 
     def get_key(self):
         """ Get the generated key from the config or create one """
-        self.replicape_key = "".join(struct.unpack('20c', self.replicape_data[100:120]))
+        key_data = self.replicape_data[100:120]
+        self.replicape_key = "".join(struct.unpack('20c', key_data))
+
         logging.debug("Found Replicape key: '"+self.replicape_key+"'")
         if self.replicape_key == '\x00'*20:
             logging.debug("Replicape key invalid")
             import random
             import string
             self.replicape_key = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(20))
-            self.replicape_data = self.replicape_data[:100] + self.replicape_key
+            self.replicape_data = (self.replicape_data[:100]
+                                   + self.replicape_key)
             logging.debug("New Replicape key: '"+self.replicape_key+"'")
-            #logging.debug("".join(struct.unpack('20c', self.new_replicape_data[100:120])))
+            # logging.debug("".join(struct.unpack('20c', self.new_replicape_data[100:120])))
             try:
                 with open(self.replicape_path, "wb") as f:
                     f.write(self.replicape_data[:120])

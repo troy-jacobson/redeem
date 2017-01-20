@@ -42,14 +42,14 @@ class GCodeProcessor:
         self.gcodes = {}
         try:
             module = __import__("gcodes", locals(), globals())
-        except ImportError: 
+        except ImportError:
             module = importlib.import_module("redeem.gcodes")
         self.load_classes_in_module(module)
 
     def load_classes_in_module(self, module):
         for module_name, obj in inspect.getmembers(module):
-            if inspect.ismodule(obj) and (obj.__name__.startswith('gcodes') \
-                or obj.__name__.startswith('redeem.gcodes')):
+            if inspect.ismodule(obj) and (obj.__name__.startswith('gcodes')
+                                          or obj.__name__.startswith('redeem.gcodes')):
                 self.load_classes_in_module(obj)
             elif inspect.isclass(obj) and \
                     issubclass(obj, GCodeCommand.GCodeCommand) and \
@@ -80,26 +80,26 @@ class GCodeProcessor:
 
     def is_buffered(self, gcode):
         val = gcode.code()
-        if not val in self.gcodes:
+        if val not in self.gcodes:
             return False
 
         return self.gcodes[val].is_buffered()
 
     def is_sync(self, gcode):
         val = gcode.code()
-        if not val in self.gcodes:
+        if val not in self.gcodes:
             return False
 
         return self.gcodes[val].is_sync()
 
     def synchronize(self, gcode):
         val = gcode.code()
-        if not val in self.gcodes:
+        if val not in self.gcodes:
             logging.error(
                 "No GCode processor for " + gcode.code() +
                 ". Message: " + gcode.message)
             return None
-        
+
         try:
             self.gcodes[val].on_sync(gcode)
             # Forcefully check/set the readyEvent here?
@@ -109,21 +109,22 @@ class GCodeProcessor:
 
     def execute(self, gcode):
         val = gcode.code()
-        if not val in self.gcodes:
+        if val not in self.gcodes:
             logging.error(
                 "No GCode processor for " + gcode.code() +
                 ". Message: " + gcode.message)
             return None
-        
+
         try:
 
-            #if self.gcodes[val].is_sync():
+            # if self.gcodes[val].is_sync():
             #    self.gcodes[val].readyEvent = Event()
 
             self.gcodes[val].execute(gcode)
 
-            #if self.gcodes[val].is_sync():
-            #    self.gcodes[val].readyEvent.wait()  # Block until the event has occurred.
+            # if self.gcodes[val].is_sync():
+            #    # Block until the event has occurred.
+            #    self.gcodes[val].readyEvent.wait()
 
         except Exception, e:
             logging.error("Error while executing "+gcode.code()+": "+str(e))
@@ -134,23 +135,24 @@ class GCodeProcessor:
         # If an M116 is running, peek at the incoming Gcode
         if self.peek(gcode):
             return
-        if self.printer.processor.is_buffered(gcode):     
-            self.printer.commands.put(gcode)              
-            if self.printer.processor.is_sync(gcode):     
-                self.printer.sync_commands.put(gcode)    # Yes, it goes into both queues!
-        else:                                         
-            self.printer.unbuffered_commands.put(gcode)  
-        
+        if self.printer.processor.is_buffered(gcode):
+            self.printer.commands.put(gcode)
+            if self.printer.processor.is_sync(gcode):
+                # Yes, it goes into both queues!
+                self.printer.sync_commands.put(gcode)
+        else:
+            self.printer.unbuffered_commands.put(gcode)
 
     def peek(self, gcode):
-        if self.printer.running_M116 and gcode.code() in ["M108", "M104", "140"]:
+        codes = ["M108", "M104", "140"]
+        if self.printer.running_M116 and gcode.code() in codes:
             self.execute(gcode)
             return True
         return False
 
     def get_long_description(self, gcode):
-        val = gcode.code()[:-1]        
-        if not val in self.gcodes:
+        val = gcode.code()[:-1]
+        if val not in self.gcodes:
             logging.error(
                 "No GCode processor for " + gcode.code() +
                 ". Message: " + gcode.message)
@@ -158,19 +160,23 @@ class GCodeProcessor:
         try:
             return self.gcodes[val].get_long_description()
         except Exception, e:
-            logging.error("Error while getting long description on "+gcode.code()+": "+str(e))
+            msg = "Error while getting long description on {}:{}"
+            msg = msg.format(gcode.code(), e)
+            logging.error(msg)
         return "Error getting long decription for "+str(val)
 
     def get_test_gcodes(self):
         gcodes = []
-        for name,gcode in self.gcodes.iteritems():
+        for name, gcode in self.gcodes.iteritems():
             for str in gcode.get_test_gcodes():
-                 gcodes.append( Gcode({"message": str, "prot": "Test"}) )
+                gcodes.append(Gcode({"message": str, "prot": "Test"}))
         return gcodes
 
+
 if __name__ == '__main__':
+    logformat = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
     logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        format=logformat,
                         datefmt='%m-%d %H:%M')
 
     proc = GCodeProcessor({})

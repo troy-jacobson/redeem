@@ -22,18 +22,17 @@ License: GNU GPL v3: http://www.gnu.org/copyleft/gpl.html
 """
 from mock import mock_open, patch, mock
 import unittest
+from TemperatureSensor import *
 
-#Make test version- agnostic:
+# Make test version- agnostic:
 from sys import version_info
 if version_info.major == 2:
     import __builtin__ as builtins  # pylint:disable=import-error
 else:
     import builtins  # pylint:disable=import-error
 
-from TemperatureSensor import *
 
 class TestTemperatureSensor(unittest.TestCase):
-
     @classmethod
     def setUp(self):
         pin = "/sys/bus/iio/devices/iio:device0/in_voltage4_raw"
@@ -45,25 +44,24 @@ class TestTemperatureSensor(unittest.TestCase):
         self.ts.c2 = 0.000216301852054578
         self.ts.c3 = 9.2641025635702e-08
 
-
     def test_init_working(self):
-        #If this passes, tables were loaded successfully
+        # If this passes, tables were loaded successfully
         self.assertEqual(self.ts.sensorIdentifier, "B57540G0104F000")
 
     def test_read_adc_lower_boundary(self):
-        with patch.object(builtins, 'open', mock_open(read_data = "0")):
+        with patch.object(builtins, 'open', mock_open(read_data="0")):
             self.assertEqual(self.ts.read_adc(), -1.0)
 
     def test_read_adc_upper_boundary(self):
-        with patch.object(builtins, 'open', mock_open(read_data = "100000")):
+        with patch.object(builtins, 'open', mock_open(read_data="100000")):
             self.assertEqual(self.ts.read_adc(), -1.0)
 
     def test_read_adc(self):
 
-        adc = str(4095.0/2)
+        adc = str(4095.0 / 2)
         expected_voltage = 0.9002198339032731
 
-        with patch.object(builtins, 'open', mock_open(read_data = adc)):
+        with patch.object(builtins, 'open', mock_open(read_data=adc)):
             self.assertTrue(abs(self.ts.read_adc() - expected_voltage) < 0.001)
 
     def test_voltage_to_resistance(self):
@@ -71,7 +69,8 @@ class TestTemperatureSensor(unittest.TestCase):
         voltage = 1.0
         expected_resistance = 5875.0
 
-        self.assertEqual(self.ts.sensor.voltage_to_resistance(voltage), expected_resistance)
+        self.assertEqual(self.ts.sensor.voltage_to_resistance(voltage),
+                         expected_resistance)
 
     def test_get_temperature(self):
         """With the instantiated sensor's steinhart-hart coefficients.
@@ -79,8 +78,9 @@ class TestTemperatureSensor(unittest.TestCase):
         """
         expected_temperature = 102.776
         with patch.object(TemperatureSensor, 'read_adc', return_value=1.0):
-            self.assertTrue(abs(self.ts.get_temperature() - expected_temperature) < 0.0001)
+            calc_temp = abs(self.ts.get_temperature() - expected_temperature)
+            self.assertTrue(calc_temp < 0.0001)
 
 
-#if __name__ == '__main__':
-#    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()

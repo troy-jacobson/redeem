@@ -28,67 +28,68 @@ from PruInterface import PruInterface
 import os
 import json
 
+
 class Printer:
     AXES = "XYZEHABC"
     axes_zipped = ["X", "Y", "Z", "E", "H", "A", "B", "C"]
     MAX_AXES = 8
     NUM_AXES = 5
 
-    AXIS_CONFIG_XY      = 0
-    AXIS_CONFIG_H_BELT  = 1
+    AXIS_CONFIG_XY = 0
+    AXIS_CONFIG_H_BELT = 1
     AXIS_CONFIG_CORE_XY = 2
-    AXIS_CONFIG_DELTA   = 3
+    AXIS_CONFIG_DELTA = 3
 
     def __init__(self):
         self.config_location = None
-        self.steppers    = {}
-        self.heaters     = {}
+        self.steppers = {}
+        self.heaters = {}
         self.thermistors = {}
-        self.mosfets     = {}
-        self.end_stops   = {}
-        self.fans        = []
-        self.cold_ends   = []
-        self.coolers     = []
-        self.comms       = {}  # Communication channels
-        self.path_planner       = None
-        self.factor             = 1.0
-        self.extrude_factor     = 1.0
-        self.movement           = Path.ABSOLUTE
-        self.axis_config        = self.AXIS_CONFIG_XY
-        self.feed_rate          = 0.5
-        self.accel              = 0.5
-        self.current_tool       = "E"
-        self.running_M116       = False
+        self.mosfets = {}
+        self.end_stops = {}
+        self.fans = []
+        self.cold_ends = []
+        self.coolers = []
+        self.comms = {}  # Communication channels
+        self.path_planner = None
+        self.factor = 1.0
+        self.extrude_factor = 1.0
+        self.movement = Path.ABSOLUTE
+        self.axis_config = self.AXIS_CONFIG_XY
+        self.feed_rate = 0.5
+        self.accel = 0.5
+        self.current_tool = "E"
+        self.running_M116 = False
         # For movement commands, whether the E axis refers to the active
         # tool (more common with other firmwares), or only the actual E axis
         self.e_axis_active = True
-        self.move_cache_size        = 128
+        self.move_cache_size = 128
         self.print_move_buffer_wait = 250
         self.min_buffered_move_time = 100
         self.max_buffered_move_time = 1000
 
         self.max_length = 0.001
 
-        self.probe_points  = []
+        self.probe_points = []
         self.probe_heights = [0, 0, 0]
-        self.probe_type = 0 # Servo
+        self.probe_type = 0  # Servo
 
         # Max number of axes.
         self.num_axes = 8
 
-        self.max_speeds             = np.ones(self.num_axes)
-        self.min_speeds             = np.ones(self.num_axes)*0.01
-        self.jerks                  = np.ones(self.num_axes)*0.01
-        self.acceleration           = [0.3]*self.num_axes
-        self.home_speed             = np.ones(self.num_axes)
-        self.home_backoff_speed     = np.ones(self.num_axes)
-        self.home_backoff_offset    = np.zeros(self.num_axes)
-        self.steps_pr_meter         = np.ones(self.num_axes)
-        self.backlash_compensation  = np.zeros(self.num_axes)
-        self.backlash_state         = np.zeros(self.num_axes)
-        self.soft_min               = -np.ones(self.num_axes)*1000.0
-        self.soft_max               = np.ones(self.num_axes)*1000.0
-        self.slaves                 = {key: "" for key in self.AXES[:self.num_axes]}
+        self.max_speeds = np.ones(self.num_axes)
+        self.min_speeds = np.ones(self.num_axes)*0.01
+        self.jerks = np.ones(self.num_axes)*0.01
+        self.acceleration = [0.3] * self.num_axes
+        self.home_speed = np.ones(self.num_axes)
+        self.home_backoff_speed = np.ones(self.num_axes)
+        self.home_backoff_offset = np.zeros(self.num_axes)
+        self.steps_pr_meter = np.ones(self.num_axes)
+        self.backlash_compensation = np.zeros(self.num_axes)
+        self.backlash_state = np.zeros(self.num_axes)
+        self.soft_min = -np.ones(self.num_axes)*1000.0
+        self.soft_max = np.ones(self.num_axes)*1000.0
+        self.slaves = {key: "" for key in self.AXES[:self.num_axes]}
 
         # bed compensation
         self.matrix_bed_comp = np.eye((3))
@@ -122,7 +123,6 @@ class Printer:
                     logging.warning(err)
                     raise RuntimeError(err)
 
-
         return
 
     def ensure_steppers_enabled(self):
@@ -140,7 +140,6 @@ class Printer:
                 if not stepper.current_enabled:
                     # Stepper does not have current enabled.
                     stepper.set_current_enabled()  # Force update
-                
 
     def reply(self, gcode):
         """ Send a reply through the proper channel """
@@ -162,7 +161,8 @@ class Printer:
         allow for endstops that are only active during the homing procedure
         """
 
-        homing_only_endstops = self.config.get('Endstops','homing_only_endstops')
+        homing_only_endstops = self.config.get('Endstops',
+                                               'homing_only_endstops')
         if homing_only_endstops:
             for es in self.end_stops.items():
                 if es[0] in homing_only_endstops:
@@ -174,33 +174,41 @@ class Printer:
 
     def set_active_endstops(self):
         """
-        go through the list of endstops and load their active status into the PRU
+        go through the list of endstops and load their active
+        status into the PRU
         """
 
         # generate a binary representation of the active status
         active = 0
-        for i, es in enumerate(["X1","Y1","Z1","X2","Y2","Z2"]):
+        for i, es in enumerate(["X1", "Y1", "Z1", "X2", "Y2", "Z2"]):
             if self.end_stops[es].active:
                 active += 1 << i
 
-        #logging.debug("endstop active mask = " + bin(active))
+        # logging.debug("endstop active mask = " + bin(active))
 
         # write to shared memory
         PruInterface.set_active_endstops(active)
         return
 
-
     def save_settings(self, filename):
         logging.debug("save_settings: setting stepper parameters")
         for name, stepper in self.steppers.iteritems():
-            self.config.set('Steppers', 'in_use_' + name, str(stepper.in_use))
-            self.config.set('Steppers', 'direction_' + name, str(stepper.direction))
-            self.config.set('Endstops', 'has_' + name, str(stepper.has_endstop))
-            self.config.set('Steppers', 'current_' + name, str(stepper.current_value))
-            self.config.set('Steppers', 'steps_pr_mm_' + name, str(stepper.steps_pr_mm))
-            self.config.set('Steppers', 'microstepping_' + name, str(stepper.microstepping))
-            self.config.set('Steppers', 'slow_decay_' + name, str(stepper.decay))
-            self.config.set('Steppers', 'slave_' + name, str(self.slaves[name]))
+            self.config.set('Steppers', 'in_use_' + name,
+                            str(stepper.in_use))
+            self.config.set('Steppers', 'direction_' + name,
+                            str(stepper.direction))
+            self.config.set('Endstops', 'has_' + name,
+                            str(stepper.has_endstop))
+            self.config.set('Steppers', 'current_' + name,
+                            str(stepper.current_value))
+            self.config.set('Steppers', 'steps_pr_mm_' + name,
+                            str(stepper.steps_pr_mm))
+            self.config.set('Steppers', 'microstepping_' + name,
+                            str(stepper.microstepping))
+            self.config.set('Steppers', 'slow_decay_' + name,
+                            str(stepper.decay))
+            self.config.set('Steppers', 'slave_' + name,
+                            str(self.slaves[name]))
 
         logging.debug("save_settings: setting heater parameters")
         for name, heater in self.heaters.iteritems():
@@ -223,7 +231,9 @@ class Printer:
 
         # Save Delta shit
         logging.debug("save_settings: setting delta shit")
-        opts = ["Hez", "L", "r", "Ae", "Be", "Ce", "A_radial", "B_radial", "C_radial", "A_tangential", "B_tangential", "C_tangential" ]
+        opts = ["Hez", "L", "r", "Ae", "Be", "Ce",
+                "A_radial", "B_radial", "C_radial",
+                "A_tangential", "B_tangential", "C_tangential"]
         for opt in opts:
             self.config.set('Delta', opt, str(Delta.__dict__[opt]))
 

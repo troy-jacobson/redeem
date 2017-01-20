@@ -28,6 +28,7 @@ from PruInterface import *
 from evdev import InputDevice, ecodes
 from select import select
 
+
 class EndStop:
     def __init__(self, printer, pin, key_code, name, invert=False):
         self.printer = printer
@@ -62,27 +63,28 @@ class EndStop:
 
     def _wait_for_event(self):
         while self.running:
-            #logging.debug("End stop {} waiting".format(self.name))
+            # logging.debug("End stop {} waiting".format(self.name))
             r, w, x = select([self.dev], [], [], 3)
             if r:
-                #logging.debug("End stop {} event".format(self.name))
+                # logging.debug("End stop {} event".format(self.name))
                 for event in self.dev.read():
                     if event.type == ecodes.EV_KEY:
                         if event.code == self.key_code:
-                            if self.invert: 
+                            if self.invert:
                                 if int(event.value):
-                                    self.hit = True 
+                                    self.hit = True
                                     self.callback()
                                 else:
                                     self.hit = False
                             elif not self.invert:
                                 if not int(event.value):
-                                    self.hit = True 
+                                    self.hit = True
                                     self.callback()
                                 else:
                                     self.hit = False
-            #else:
-            #    logging.debug("End stop {} timeout".format(self.name))
+            # else:
+            #     logging.debug("End stop {} timeout".format(self.name))
+
     def read_value(self):
         """ Read the current endstop value from GPIO using PRU1 """
         state = PruInterface.get_shared_long(0)
@@ -100,23 +102,25 @@ class EndStop:
             self.hit = bool(state & (1 << 5))
         else:
             raise RuntimeError('Invalid endstop name')
-                        
+
     def callback(self):
         """ An endStop has been hit """
         logging.info("End Stop " + self.name + " hit!")
         if "toggle" in self.printer.comms:
-            self.printer.comms["toggle"].send_message("End stop {} hit!".format(self.name))
+            msg = "End stop {} hit!".format(self.name)
+            self.printer.comms["toggle"].send_message(msg)
         if "octoprint" in self.printer.comms:
-            self.printer.comms["octoprint"].send_message("End stop {} hit!".format(self.name))
-    
+            msg = "End stop {} hit!".format(self.name)
+            self.printer.comms["octoprint"].send_message(msg)
+
 if __name__ == "__main__":
     print "Test endstops"
-    
+
     import time
-    
+
     while True:
         state = PruInterface.get_shared_long(0)
-        print bin(state) + "  ", 
+        print bin(state) + "  ",
         if bool(state & (1 << 0)):
             print "X1",
         elif bool(state & (1 << 1)):
@@ -131,6 +135,3 @@ if __name__ == "__main__":
             print "Z2",
         print (" "*30)+"\r",
         time.sleep(0.01)
-        
-            
-    

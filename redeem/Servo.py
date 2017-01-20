@@ -30,15 +30,19 @@ import logging
 from PWM_pin import PWM_pin
 from ShiftRegister import ShiftRegister
 
+
 class Servo:
-    def __init__(self, channel, pulse_width_min, pulse_width_max, angle_min, angle_max, init_angle, turnoff_timeout=0):
+    def __init__(self, channel, pulse_width_min, pulse_width_max,
+                 angle_min, angle_max, init_angle, turnoff_timeout=0):
         """Define a new software controllable servo with adjustable speed control
 
         Keyword arguments:
-        pulse_width_min -- The minimum pulse width defining the lowest angle
-        pulse_width_max -- The maximum pulse width defining the biggest angle
-        init_angle -- Initial angle that the servo should take when it is powered on. Range is 0 to 180deg
-        turnoff_timeout -- number of seconds after which the servo is turned off if no command is received. 0 = never turns off
+        pulse_width_min: The minimum pulse width defining the lowest angle
+        pulse_width_max: The maximum pulse width defining the biggest angle
+        init_angle: Initial angle that the servo should take when it is
+                      powered on. Range is 0 to 180deg
+        turnoff_timeout: number of seconds after which the servo is turned
+                         off if no command is received. 0 = never turns off
         """
 
         self.angle_min = angle_min
@@ -47,7 +51,7 @@ class Servo:
         self.pulse_width_min = pulse_width_min
         self.pulse_width_max = pulse_width_max
         self.pulse_width_total = pulse_width_max-pulse_width_min
-        
+
         self.turnoff_timeout = turnoff_timeout
 
         self.current_pulse_width = self.angle_to_pulse_width(init_angle)
@@ -55,7 +59,7 @@ class Servo:
 
         self.last_angle = init_angle
 
-        self.pulse_length = 20.0*10.0**-3.0 # 20 ms
+        self.pulse_length = 20.0 * 10.0**-3.0  # 20 ms
 
         logging.debug("Angle min: {} deg".format(self.angle_min))
         logging.debug("Angle max: {} deg".format(self.angle_max))
@@ -74,9 +78,9 @@ class Servo:
 
         # Branch based on channel type.
 
-        if type(channel) == int: # Revision A
+        if type(channel) == int:  # Revision A
             self.pwm = PWM(channel, 50, self.current_pulse_width)
-        else: # Revision B
+        else:  # Revision B
             # Set up the Shift register for enabling this servo
             if channel == "P9_14":
                 shiftreg_nr = 1
@@ -85,8 +89,9 @@ class Servo:
                 shiftreg_nr = 2
                 self.pwm = PWM_pin(channel, 50, self.current_pulse_width)
             else:
-                logging.warning("Tried to assign servo to an unknown channel/pin: "+str(channel))
-                return        
+                warn = "Tried to assign servo to an unknown channel/pin: {}"
+                logging.warning(warn.format(channel))
+                return
 
             ShiftRegister.make(5)
             self.shift_reg = ShiftRegister.registers[shiftreg_nr]
@@ -99,32 +104,35 @@ class Servo:
         else:
             self.shift_reg.remove_state(0x01)
 
-
     def set_angle(self, angle, speed=60, asynchronous=True):
-        ''' Set the servo angle to the given value, in degree, with the given speed in deg / sec '''
+        """ Set the servo angle to the given value, in degrees,
+            with the given speed in deg / sec
+        """
         angle = max(min(self.angle_max, angle), self.angle_min)
         pulse_width = self.angle_to_pulse_width(angle)
         last_angle = self.last_angle
 
-        logging.debug("Updating angle from {} (pw={}) to {} (pw={}) ".format(last_angle, self.last_pulse_width, angle, pulse_width))
+        msg = "Updating angle from {} (pw={}) to {} (pw={}) "
+        logging.debug(msg.format(last_angle,
+                                 self.last_pulse_width,
+                                 angle,
+                                 pulse_width))
 
         if angle == last_angle:
             return
-        
+
         t = (math.fabs(angle-last_angle)/speed) / math.fabs(angle-last_angle)
 
-        
-
-        if angle>=last_angle:
+        if angle >= last_angle:
             for a in xrange(int(last_angle), int(angle+1), 1):
-                self.queue.put((self.angle_to_pulse_width(a),t))
+                self.queue.put((self.angle_to_pulse_width(a), t))
         else:
             for a in xrange(int(last_angle), int(angle-1), -1):
-                self.queue.put((self.angle_to_pulse_width(a),t))
-        
+                self.queue.put((self.angle_to_pulse_width(a), t))
+
         self.last_pulse_width = pulse_width
         self.last_angle = angle
-        
+
         if not asynchronous:
             self.queue.join()
 
@@ -141,7 +149,9 @@ class Servo:
             try:
                 ev = self.queue.get(block=True, timeout=1)
             except Queue.Empty:
-                if self.turnoff_timeout>0 and self.lastCommandTime>0 and time.time()-self.lastCommandTime>self.turnoff_timeout:
+                if (self.turnoff_timeout > 0
+                   and self.lastCommandTime > 0
+                   and time.time() - self.lastCommandTime > self.turnoff_timeout):
                     self.lastCommandTime = 0
                     self.turn_off()
                 continue
@@ -150,24 +160,24 @@ class Servo:
                 pass
 
             self.current_pulse_width = ev[0]
-            #logging.debug("setting pulse width to "+str(self.current_pulse_width))
+            # logging.debug("setting pulse width to "+str(self.current_pulse_width))
             self.pwm.set_value(self.current_pulse_width/self.pulse_length)
             self.lastCommandTime = time.time()
             time.sleep(ev[1])
 
             self.queue.task_done()
 
-
     def angle_to_pulse_width(self, angle):
         return ((angle-self.angle_min)/self.angle_total)*self.pulse_width_total + self.pulse_width_min
 
     def pulse_width_to_angle(self, pulse_width):
         return (((pulse_width-self.pulse_width_min)/(self.pulse_width_total))*self.angle_total)+self.angle_min
-    
+
+
 if __name__ == '__main__':
-   
-    servo_0 = Servo("P9_14", 0.1, 0.2, 90) 
-    servo_1 = Servo("P9_16", 0.1, 0.2, 90) 
+
+    servo_0 = Servo("P9_14", 0.1, 0.2, 90)
+    servo_1 = Servo("P9_16", 0.1, 0.2, 90)
 
     while True:
         for i in range(1, 180):
@@ -176,5 +186,3 @@ if __name__ == '__main__':
         for i in range(180, 1, -1):
             servo_0.set_angle(i)
             servo_1.set_angle(i)
-
-

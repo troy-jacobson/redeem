@@ -26,10 +26,12 @@ import subprocess
 import os
 import logging
 
-""" 
 """
+"""
+
+
 class PWM_pin:
-    def __init__(self, pin, frequency, duty_cycle): 
+    def __init__(self, pin, frequency, duty_cycle):
         if pin == "P9_14":
             self.chip = 0
             self.channel = 0
@@ -43,26 +45,25 @@ class PWM_pin:
         self.set_frequency(frequency)
         self.set_value(duty_cycle)
         self.set_enabled()
-        
+
     def export_chip(self, chip, channel):
         self.base = "/sys/class/pwm/pwmchip"+str(chip)+"/pwm"+str(channel)
         if not os.path.exists(self.base):
-            with open("/sys/class/pwm/pwmchip"+str(self.chip)+"/export", "w") as f:
+            chip_file = "/sys/class/pwm/pwmchip{}/export".format(self.chip)
+            with open(chip_file, "w") as f:
                 f.write(str(self.channel))
             if not os.path.exists(self.base):
                 logging.warning("Unable to export PWM pin")
-        
 
-    def set_enabled(self, is_enabled = True):
+    def set_enabled(self, is_enabled=True):
         path = self.base+"/enable"
-        with open(path, "w") as f:           
+        with open(path, "w") as f:
             f.write("1" if is_enabled else "0")
-
 
     def set_frequency(self, freq):
         """ Set the PWM frequency for all fans connected on this PWM-chip """
         # period is specified in picoseconds
-        period = int( (1.0/float(freq))*(10**9) )
+        period = int((1.0/float(freq))*(10**9))
         self.period = period
         path = self.base+"/period"
         logging.debug("Setting period to "+str(period))
@@ -73,16 +74,16 @@ class PWM_pin:
         """ Set the amount of on-time from 0..1 """
         duty_cycle = int(self.period*float(value))
         path = self.base+"/duty_cycle"
-        #logging.debug("Setting duty_cycle to "+str(duty_cycle))
+        # logging.debug("Setting duty_cycle to "+str(duty_cycle))
         with open(path, "w") as f:
             f.write(str(duty_cycle))
 
 
 if __name__ == '__main__':
-   
+
     p1 = PWM_pin("P9_14", 50, 0.1)
     p2 = PWM_pin("P9_16", 50, 0.1)
-    
+
     while 1:
         for i in range(100):
             p1.set_value(0.1+(i*0.001))
@@ -92,5 +93,3 @@ if __name__ == '__main__':
             p1.set_value(0.2-(i*0.001))
             p2.set_value(0.2-(i*0.001))
             time.sleep(0.03)
-
-

@@ -26,7 +26,7 @@ import socket
 import logging
 from Gcode import Gcode
 
-size = 1024 
+size = 1024
 
 
 class Ethernet:
@@ -35,13 +35,13 @@ class Ethernet:
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         host = ''
         port = 50000
-        backlog = 5       
+        backlog = 5
         for i in range(10):
-            try: 
+            try:
                 self.s.bind((host, port))
                 break
             except socket.error:
-                port += 1    
+                port += 1
 
         logging.info("Ethernet bound to port " + str(port))
         self.s.listen(backlog)
@@ -53,7 +53,7 @@ class Ethernet:
     def get_message(self):
         """Loop that gets messages and pushes them on the queue"""
         while self.running:
-            #logging.info("Ethernet listening")
+            # logging.info("Ethernet listening")
             self.s.settimeout(1.0)
             try:
                 self.client, self.address = self.s.accept()
@@ -72,7 +72,7 @@ class Ethernet:
 
     def send_message(self, message):
         """Send a message"""
-        #logging.debug("Eth: "+str(message))
+        # logging.debug("Eth: "+str(message))
         if message[-1] != "\n":
             message += "\n"
         try:

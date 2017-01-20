@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Implements an 8 bit shift register controlled via SPI. 
+Implements an 8 bit shift register controlled via SPI.
 
 Author: Elias Bakken
 email: elias(dot)bakken(at)gmail(dot)com
@@ -41,17 +41,18 @@ except ImportError:
         logging.warning("Unable to set up SPI")
         spi = None
 
+
 class ShiftRegister(object):
 
     registers = list()
-    
+
     @staticmethod
     def commit():
         """ Send the values to the serial to parallel chips """
         bytes = []
         for reg in ShiftRegister.registers:
             bytes.append(reg.state)
-        if spi is not None: 
+        if spi is not None:
             spi.writebytes(bytes[::-1])
 
     @staticmethod
@@ -62,7 +63,7 @@ class ShiftRegister(object):
 
     def __init__(self):
         """ Init """
-        ShiftRegister.registers.append(self)       # Add to list of steppers    
+        ShiftRegister.registers.append(self)       # Add to list of steppers
         self.state = 0x00
 
     def set_state(self, state, mask=0xFF):
@@ -77,14 +78,12 @@ class ShiftRegister(object):
     def remove_state(self, state):
         self.state &= ~state
         ShiftRegister.commit()
-    
+
 
 if __name__ == '__main__':
 
     ShiftRegister.make()
     reg2 = ShiftRegister.registers[2]
     reg3 = ShiftRegister.registers[3]
-    reg2.add_state( 0x01 )
-    reg3.add_state( 0x01 )
-
-
+    reg2.add_state(0x01)
+    reg3.add_state(0x01)

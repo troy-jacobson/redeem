@@ -36,7 +36,8 @@ class PluginsController:
         self.plugins = {}
 
         # Load the plugins specified by the config
-        pluginsToLoad = [v.strip() for v in self.printer.config.get('System', 'plugins', '').split(',')]
+        confList = self.printer.config.get('System', 'plugins', '').split(',')
+        pluginsToLoad = [v.strip() for v in confList]
         pluginClasses = PluginsController.get_plugin_classes()
 
         for plugin in pluginsToLoad:
@@ -45,11 +46,13 @@ class PluginsController:
 
             pluginClassName = plugin+'Plugin'
 
-            if  pluginClassName in pluginClasses:
+            if pluginClassName in pluginClasses:
                 pluginInstance = pluginClasses[pluginClassName](self.printer)
                 self.plugins[plugin] = pluginInstance
             else:
-                logging.error('Unable to find plugin \''+plugin+'\'. This plugin won\'t be loaded.')
+                msg = ("Unable to find plugin {}. "
+                       "This plugin will not be loaded.").format(plugin)
+                logging.error(msg)
 
     def path_planner_initialized(self, path_planner):
         """ Hook method called when the path planner has been initalized """
@@ -73,7 +76,7 @@ class PluginsController:
     def get_plugin_classes():
         try:
             module = __import__("plugins", locals(), globals())
-        except ImportError: 
+        except ImportError:
             module = importlib.import_module("redeem.plugins")
 
         pluginClasses = {}
@@ -85,7 +88,7 @@ class PluginsController:
     def load_classes_in_module(module, classes):
         for module_name, obj in inspect.getmembers(module):
             if inspect.ismodule(obj) and (obj.__name__.startswith('plugins')
-                or obj.__name__.startswith('redeem.plugins')):
+               or obj.__name__.startswith('redeem.plugins')):
                 PluginsController.load_classes_in_module(obj, classes)
             elif inspect.isclass(obj) and \
                     issubclass(obj, AbstractPlugin.AbstractPlugin) and \
@@ -107,9 +110,11 @@ class PluginsController:
 
 
 if __name__ == '__main__':
+    logformat = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+    logdatefmt = '%m-%d %H:%M'
     logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                        datefmt='%m-%d %H:%M')
+                        format=logformat,
+                        datefmt=logdatefmt)
 
     print "Available plugins:"
 

@@ -31,26 +31,29 @@ from threading import Thread
 from Alarm import Alarm
 from Key_pin import Key_pin
 
+
 class Stepper(object):
-    
+
     printer = None
 
     all_steppers = list()
-    
-    def __init__(self, step_pin, dir_pin, fault_key, dac_channel, shiftreg_nr, name):
+
+    def __init__(self, step_pin, dir_pin, fault_key,
+                 dac_channel, shiftreg_nr, name):
         """ Init """
-        self.dac_channel     = dac_channel  # Which channel on the dac is connected to this stepper
-        self.step_pin        = step_pin
-        self.dir_pin         = dir_pin
-        self.fault_key       = fault_key
-        self.name            = name
-        self.enabled 	     = False	    
-        self.in_use          = False        
-        self.steps_pr_mm     = 1            
-        self.microsteps      = 1.0     
-        self.microstepping   = 0
-        self.direction       = 1
-        self.current_disabled= False
+        # Which channel on the dac is connected to this stepper
+        self.dac_channel = dac_channel
+        self.step_pin = step_pin
+        self.dir_pin = dir_pin
+        self.fault_key = fault_key
+        self.name = name
+        self.enabled = False
+        self.in_use = False
+        self.steps_pr_mm = 1
+        self.microsteps = 1.0
+        self.microstepping = 0
+        self.direction = 1
+        self.current_disabled = False
 
         # Set up the Shift register
         ShiftRegister.make(8)
@@ -73,7 +76,7 @@ class Stepper(object):
         """ Set the number of steps pr mm. """
         self.steps_pr_mm = steps_pr_mm
         self.mmPrStep = 1.0 / (steps_pr_mm * self.microsteps)
-    
+
     def get_steps_pr_meter(self):
         """ Get the number of steps pr meter """
         return self.steps_pr_mm*self.microsteps * 1000.0
@@ -81,7 +84,7 @@ class Stepper(object):
     def get_step_bank(self):
         """ The pin that steps, it looks like GPIO1_31 """
         return int(self.step_pin[4:5])
-    
+
     def get_step_pin(self):
         """ The pin that steps, it looks like GPIO1_31 """
         return int(self.step_pin[6:])
@@ -102,13 +105,14 @@ class Stepper(object):
         pass
 
     def fault_callback(self, key, event):
-        Alarm(Alarm.STEPPER_FAULT, "Stepper {}<br>Most likely the stepper is over heated.".format(self.name))
-            
+        msg = "Stepper {}<br>Most likely the stepper is over heated."
+        msg = msg.format(self.name)
+        Alarm(Alarm.STEPPER_FAULT, msg)
 
 
 """
-The bits in the shift register are as follows (Rev B1): 
-Bit - name   - init val 
+The bits in the shift register are as follows (Rev B1):
+Bit - name   - init val
 D0 = -		 = X (or servo enable)
 D1 = CFG5    = 0 (Chopper blank time)
 D2 = CFG4    = 0 (Choppper hysteresis)
@@ -119,59 +123,64 @@ D6 = CFG1    = 0 (microstepping)
 D7 = CFG1-Z  = 0 (microstepping)
 """
 
+
 class Stepper_00B1(Stepper):
 
-    def __init__(self, stepPin, dirPin, faultPin, dac_channel, shiftreg_nr, name):
-        Stepper.__init__(self, stepPin, dirPin, faultPin, dac_channel, shiftreg_nr, name)
-        self.dac    = PWM_DAC(dac_channel)
-        self.state  = 0 # The initial state of shift register
+    def __init__(self, stepPin, dirPin, faultPin,
+                 dac_channel, shiftreg_nr, name):
+        Stepper.__init__(self, stepPin, dirPin, faultPin,
+                         dac_channel, shiftreg_nr, name)
+        self.dac = PWM_DAC(dac_channel)
+        self.state = 0  # The initial state of shift register
 
-    def set_microstepping(self, value, force_update=False):                
+    def set_microstepping(self, value, force_update=False):
         """ Todo: Find an elegant way for this """
-        EN_CFG1  = (1<<7)
-        DIS_CFG1 = (0<<7)
-        EN_CFG2  = (1<<5)
-        DIS_CFG2 = (0<<5)
-        CFG2_H   = (1<<4)
-        CFG2_L   = (0<<4)
-        CFG1_H   = (1<<6)
-        CFG1_L   = (0<<6)
+        EN_CFG1 = (1 << 7)
+        DIS_CFG1 = (0 << 7)
+        EN_CFG2 = (1 << 5)
+        DIS_CFG2 = (0 << 5)
+        CFG2_H = (1 << 4)
+        CFG2_L = (0 << 4)
+        CFG1_H = (1 << 6)
+        CFG1_L = (0 << 6)
 
-        if   value == 0:   # GND, GND
+        if value == 0:  # GND, GND
             state = EN_CFG2 | CFG2_L | EN_CFG1 | CFG1_L
             self.microsteps = 1
-        elif value == 1: # GND, VCC
+        elif value == 1:  # GND, VCC
             state = EN_CFG2 | CFG2_L | EN_CFG1 | CFG1_H
             self.microsteps = 2
-        elif value == 2: # GND, open
+        elif value == 2:  # GND, open
             state = EN_CFG2 | CFG2_L | DIS_CFG1 | CFG1_L
             self.microsteps = 2
-        elif value == 3: # VCC, GND
+        elif value == 3:  # VCC, GND
             state = EN_CFG2 | CFG2_H | EN_CFG1 | CFG1_L
             self.microsteps = 4
-        elif value == 4: # VCC, VCC
+        elif value == 4:  # VCC, VCC
             state = EN_CFG2 | CFG2_H | EN_CFG1 | CFG1_H
             self.microsteps = 16
-        elif value == 5: # VCC, open
+        elif value == 5:  # VCC, open
             state = EN_CFG2 | CFG2_H | DIS_CFG1 | CFG1_L
             self.microsteps = 4
-        elif value == 6: # open, GND
+        elif value == 6:  # open, GND
             state = DIS_CFG2 | CFG2_L | EN_CFG1 | CFG1_L
             self.microsteps = 16
-        elif value == 7: # open, VCC
+        elif value == 7:  # open, VCC
             state = DIS_CFG2 | CFG2_L | EN_CFG1 | CFG1_H
             self.microsteps = 4
-        elif value == 8: # open, open
+        elif value == 8:  # open, open
             state = DIS_CFG2 | CFG2_L | DIS_CFG1 | CFG1_L
             self.microsteps = 16
 
-        self.shift_reg.set_state(state,0xF0)
-        self.mmPrStep    = 1.0/(self.steps_pr_mm*self.microsteps)
+        self.shift_reg.set_state(state, 0xF0)
+        self.mmPrStep = 1.0/(self.steps_pr_mm*self.microsteps)
 
         # update the Printer class with new values
         stepper_num = self.printer.axis_to_index(self.name)
         self.printer.steps_pr_meter[stepper_num] = self.get_steps_pr_meter()
-        logging.debug("Updated stepper "+self.name+" to microstepping "+str(value)+" = "+str(self.microsteps))   
+        msg = "Updated stepper {} to microstepping {} = {}"
+        msg = msg.format(self.name, value, self.microsteps)
+        logging.debug(msg)
         self.microstepping = value
 
     def set_current_value(self, i_rms):
@@ -180,7 +189,9 @@ class Stepper_00B1(Stepper):
 
         v_iref = 2.5*(i_rms/1.92)
         if(v_iref > 2.5):
-            logging.warning("Current ref for stepper "+self.name+" above limit (2.5 V). Setting to 2.5 V")
+            warn = "Current ref for stepper {0} above limit. Setting to 2.5 V"
+            warn = warn.format(self.name)
+            logging.warning(warn)
             v_iref = 2.5
         logging.debug("Setting votage to "+str(v_iref)+" for "+self.name)
         self.dac.set_voltage(v_iref)
@@ -194,52 +205,57 @@ class Stepper_00B1(Stepper):
             Stepper.printer.enable.set_enabled()
 
     def set_decay(self, value):
-        EN_CFG0  = (1<<3)
-        DIS_CFG0 = (0<<3)
-        EN_CFG4  = (1<<2)
-        DIS_CFG4 = (0<<2)
-        EN_CFG5  = (1<<1)
-        DIS_CFG5 = (0<<1)
+        EN_CFG0 = (1 << 3)
+        DIS_CFG0 = (0 << 3)
+        EN_CFG4 = (1 << 2)
+        DIS_CFG4 = (0 << 2)
+        EN_CFG5 = (1 << 1)
+        DIS_CFG5 = (0 << 1)
 
-        if   value == 0:   # GND, GND, GND
+        if value == 0:  # GND, GND, GND
             state = DIS_CFG0 | DIS_CFG4 | DIS_CFG5
-        elif value == 1: # GND, GND, VCC
+        elif value == 1:  # GND, GND, VCC
             state = DIS_CFG0 | DIS_CFG4 | EN_CFG5
-        elif value == 2: # GND, VCC, GND
+        elif value == 2:  # GND, VCC, GND
             state = DIS_CFG0 | EN_CFG4 | DIS_CFG5
-        elif value == 3: # GND, VCC, VCC
+        elif value == 3:  # GND, VCC, VCC
             state = DIS_CFG0 | EN_CFG4 | EN_CFG5
-        elif value == 4: # VCC, GND, GND
+        elif value == 4:  # VCC, GND, GND
             state = EN_CFG0 | DIS_CFG4 | DIS_CFG5
-        elif value == 5: # VCC, GND, VCC
+        elif value == 5:  # VCC, GND, VCC
             state = EN_CFG0 | DIS_CFG4 | EN_CFG5
-        elif value == 6: # VCC, VCC, GND
-           state = EN_CFG0 | EN_CFG4 | DIS_CFG5
-        elif value == 7: # VCC, VCC, VCC
+        elif value == 6:  # VCC, VCC, GND
+            state = EN_CFG0 | EN_CFG4 | DIS_CFG5
+        elif value == 7:  # VCC, VCC, VCC
             state = EN_CFG0 | EN_CFG4 | EN_CFG5
-        else: 
-            logging.warning("Tried to set illegal value for stepper decay: "+str(value))
+        else:
+            warn = "Tried to set illegal value for stepper decay: {}"
+            warn = warn.format(value)
+            logging.warning(warn)
             return
 
         self.shift_reg.set_state(state, 0x0E)
-        self.decay = value # For saving the setting with M500
+        self.decay = value  # For saving the setting with M500
+
 
 class Stepper_00B2(Stepper_00B1):
 
-    def __init__(self, stepPin, dirPin, faultPin, dac_channel, shiftreg_nr, name):
-        Stepper_00B1.__init__(self, stepPin, dirPin, faultPin, dac_channel, shiftreg_nr, name)
-        self.dac    = PWM_DAC(dac_channel)
+    def __init__(self, stepPin, dirPin, faultPin,
+                 dac_channel, shiftreg_nr, name):
+        Stepper_00B1.__init__(self, stepPin, dirPin, faultPin,
+                              dac_channel, shiftreg_nr, name)
+        self.dac = PWM_DAC(dac_channel)
         if name in ["X", "E", "H"]:
-            self.state  = 0x1 # The initial state of shift register
+            self.state = 0x1  # The initial state of shift register
         else:
-            self.state  = 0x0
+            self.state = 0x0
         self.shift_reg.set_state(self.state)
 
     def set_disabled(self, force_update=False):
         if not self.enabled:
             return
         logging.debug("Disabling stepper "+self.name)
-        # X, Y, Z steppers are on the first shift reg. Extruders have their own.  
+        # X, Y, Z steppers are on the first shift reg, extruders have their own
         if self.name in ["X", "Y", "Z"]:
             ShiftRegister.registers[0].add_state(0x1)
         elif self.name == "E":
@@ -252,32 +268,35 @@ class Stepper_00B2(Stepper_00B1):
         if self.enabled:
             return
         logging.debug("Enabling stepper "+self.name)
-        # X, Y, Z steppers are on the first shift reg. Extruders have their own.  
+        # X, Y, Z steppers are on the first shift reg, extruders have their own
         if self.name in ["X", "Y", "Z"]:
-            ShiftRegister.registers[0].remove_state(0x1) # First bit low. 
+            ShiftRegister.registers[0].remove_state(0x1)  # First bit low.
         elif self.name == "E":
             ShiftRegister.registers[3].remove_state(0x1)
         elif self.name == "H":
             ShiftRegister.registers[4].remove_state(0x1)
         self.enabled = True
 
+
 class Stepper_00B3(Stepper_00B2):
 
-    def __init__(self, stepPin, dirPin, faultPin, dac_channel, shiftreg_nr, name):
-        Stepper_00B1.__init__(self, stepPin, dirPin, faultPin, dac_channel, shiftreg_nr, name)
-        self.dac    = PWM_DAC(dac_channel)
+    def __init__(self, stepPin, dirPin, faultPin,
+                 dac_channel, shiftreg_nr, name):
+        Stepper_00B1.__init__(self, stepPin, dirPin, faultPin,
+                              dac_channel, shiftreg_nr, name)
+        self.dac = PWM_DAC(dac_channel)
         if name in ["X", "E", "H"]:
-            self.state  = 0x1 # The initial state of shift register
+            self.state = 0x1  # The initial state of shift register
         else:
-            self.state  = 0x0
+            self.state = 0x0
         self.shift_reg.set_state(self.state)
         self.current_enabled = True
-   
+
     def set_disabled(self, force_update=False):
         if not self.enabled:
             return
         logging.debug("Disabling stepper "+self.name)
-        # X, Y, Z steppers are on the first shift reg. Extruders have their own.  
+        # X, Y, Z steppers are on the first shift reg, extruders have their own
         if self.name in ["X", "Y", "Z"]:
             ShiftRegister.registers[0].add_state(0x1)
         elif self.name in ["E", "H"]:
@@ -288,9 +307,9 @@ class Stepper_00B3(Stepper_00B2):
         if self.enabled:
             return
         logging.debug("Enabling stepper "+self.name)
-        # X, Y, Z steppers are on the first shift reg. Extruders have their own.  
+        # X, Y, Z steppers are on the first shift reg, extruders have their own
         if self.name in ["X", "Y", "Z"]:
-            ShiftRegister.registers[0].remove_state(0x1) # First bit low. 
+            ShiftRegister.registers[0].remove_state(0x1)  # First bit low.
         elif self.name in ["E", "H"]:
             ShiftRegister.registers[3].remove_state(0x1)
 
@@ -303,7 +322,7 @@ class Stepper_00B3(Stepper_00B2):
             ShiftRegister.registers[4].add_state(0x1)
         else:
             ShiftRegister.registers[4].remove_state(0x1)
-                    
+
     def set_current_disabled(self):
         ''' Set the stepper in lowest current mode '''
         if not self.current_enabled:
@@ -313,39 +332,45 @@ class Stepper_00B3(Stepper_00B2):
         self.current_enabled = False
         self.set_current_value(0)
 
-
     def set_current_enabled(self):
         if self.current_enabled:
             return
         self.set_current_value(self.current_enable_value)
         self.current_enabled = True
-        
+
 
 """
 The bits in the shift register are as follows (Rev A4) :
-Bit - name   - init val 
+Bit - name   - init val
 D0 = -		   = X
 D1 = MODE2   = 0
 D2 = MODE1   = 0
 D3 = MODE0   = 0
 D4 = nENABLE = 0  - Enabled
-D5 = DECAY   = 0  - Slow decay 
-D6 = nSLEEP  = 1  - Not sleeping 
+D5 = DECAY   = 0  - Slow decay
+D6 = nSLEEP  = 1  - Not sleeping
 D7 = nRESET  = 1  - Not in reset mode
 """
 
-class Stepper_00A4(Stepper):
-    revision    = "A4"
-    SLEEP       = 6
-    ENABLED     = 4
-    RESET       = 7
-    DECAY       = 5
 
-    def __init__(self, stepPin, dirPin, faultPin, dac_channel, shiftreg_nr, name):
-        Stepper.__init__(self, stepPin, dirPin, faultPin, dac_channel, shiftreg_nr, name)
-        self.dac        = DAC(dac_channel)
-        self.dacvalue 	= 0x00   	    # The voltage value on the VREF		
-        self.state      = (1<<Stepper_00A4.SLEEP)|(1<<Stepper_00A4.RESET)| (1<<Stepper_00A4.ENABLED) # The initial state of the inputs
+class Stepper_00A4(Stepper):
+    revision = "A4"
+    SLEEP = 6
+    ENABLED = 4
+    RESET = 7
+    DECAY = 5
+
+    def __init__(self, stepPin, dirPin, faultPin,
+                 dac_channel, shiftreg_nr, name):
+        Stepper.__init__(self, stepPin, dirPin, faultPin,
+                         dac_channel, shiftreg_nr, name)
+        self.dac = DAC(dac_channel)
+        # The voltage value on the VREF
+        self.dacvalue = 0x00
+        # The initial state of the inputs
+        self.state = ((1 << Stepper_00A4.SLEEP)
+                      | (1 << Stepper_00A4.RESET)
+                      | (1 << Stepper_00A4.ENABLED))
         self.update()
 
     def set_enabled(self, force_update=False):
@@ -370,7 +395,7 @@ class Stepper_00A4(Stepper):
 
     def disable_sleepmode(self, force_update=False):
         """ Disables sleepmode (awake) """
-        self.state |= (1<<Stepper_00A4.SLEEP)
+        self.state |= (1 << Stepper_00A4.SLEEP)
         self.update()
 
     def reset(self, force_update=False):
@@ -382,23 +407,25 @@ class Stepper_00A4(Stepper):
         time.sleep(0.001)
         self.state |= (1 << Stepper_00A4.RESET)
         self.update()
-    
-    def set_microstepping(self, value, force_update=False):        
-        """ Microstepping (default = 0) 0 to 5 """        
-        if not value in [0, 1, 2, 3, 4, 5]: # Full, half, 1/4, 1/8, 1/16, 1/32.
-            logging.warning("Tried to set illegal microstepping value: {0} for stepper {1}".format(value, self.name))
+
+    def set_microstepping(self, value, force_update=False):
+        """ Microstepping (default = 0) 0 to 5 """
+        if value not in [0, 1, 2, 3, 4, 5]:  # Full, half, 1/4, 1/8, 1/16, 1/32
+            msg = "Tried to set illegal microstepping value: {0} stepper {1}"
+            logging.warning(msg.format(value, self.name))
             return
         self.microstepping = value
-        self.microsteps  = 2**value     # 2^val
+        self.microsteps = 2**value     # 2^val
         # Keep bit 0, 4, 5, 6 intact but replace bit 1, 2, 3
         self.state = int("0b"+bin(self.state)[2:].rjust(8, '0')[:4]+bin(value)[2:].rjust(3, '0')[::-1]+"0", 2)
-        #self.state = int("0b"+bin(self.state)[2:].rjust(8, '0')[:4]+bin(value)[2:].rjust(3, '0')+bin(self.state)[-1:], 2)
-        self.mmPrStep    = 1.0/(self.steps_pr_mm*self.microsteps)
+        # self.state = int("0b"+bin(self.state)[2:].rjust(8, '0')[:4]+bin(value)[2:].rjust(3, '0')+bin(self.state)[-1:], 2)
+        self.mmPrStep = 1.0/(self.steps_pr_mm*self.microsteps)
 
         # update the Printer class with new values
         stepper_num = self.printer.axis_to_index(self.name)
         self.printer.steps_pr_meter[stepper_num] = self.get_steps_pr_meter()
-        logging.debug("Updated stepper "+self.name+" to microstepping "+str(value)+" = "+str(self.microsteps))   
+        msg = "Updated stepper {0} to microstepping {1} = {2}"
+        logging.debug(msg.format(self.name, value, self.microsteps))
         self.update()
 
     def set_current_value(self, iChop):
@@ -411,7 +438,8 @@ class Stepper_00A4(Stepper):
     def set_decay(self, value, force_update=False):
         """ Decay mode, look in the data sheet """
         if value not in [0, 1]:
-            logging.warning("Invalid decay value. Use 0 or 1. Got: {}".format(value))
+            warning = "Invalid decay value. Use 0 or 1. Got: {}".format(value)
+            logging.warning(warning)
             return
         self.decay = value
         self.state &= ~(1 << Stepper_00A4.DECAY)        # bit 5
@@ -420,11 +448,13 @@ class Stepper_00A4(Stepper):
 
     def update(self):
         # Invert shizzle
-        self.shift_reg.set_state(self.state)    
-        #logging.debug("Updated stepper {} to enabled, state: {}".format(self.name, bin(self.state)))
+        self.shift_reg.set_state(self.state)
+        # logging.debug("Updated stepper {} to enabled, state: {}".format(self.name, bin(self.state)))
+
 
 class Stepper_reach_00A4(Stepper_00A4):
     pass
+
 
 """
 The bits in the shift register are as follows (Rev A3):
@@ -438,6 +468,7 @@ D6 = nENABLE = 0
 D7 = -   		 = X
 """
 
+
 class Stepper_00A3(Stepper_00A4):
     Stepper.revision = "A3"
     Stepper.ENABLED = 6
@@ -446,13 +477,13 @@ class Stepper_00A3(Stepper_00A4):
     Stepper.DECAY = 0
 
 
-
 # Simple test procedure for the steppers
+
+
 if __name__ == '__main__':
-    s = Stepper("GPIO0_27", "GPIO1_29", "GPIO2_4" , 0, 0, "X")
+    s = Stepper("GPIO0_27", "GPIO1_29", "GPIO2_4", 0, 0, "X")
 
     print s.get_step_pin()
     print s.get_step_bank()
     print s.get_dir_pin()
     print s.get_dir_bank()
-

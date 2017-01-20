@@ -38,10 +38,10 @@ class Gcode:
             self.prot = packet["prot"] if "prot" in packet else "None"
             self.has_crc = False
             self.answer = "ok"
-            #print packet
+            # print packet
             if len(self.message) == 0:
-                #print packet
-                #logging.debug("Empty message")
+                # print packet
+                # logging.debug("Empty message")
                 self.gcode = "No-Gcode"
                 return
             self.tokens = self.message.split(" ")
@@ -133,7 +133,6 @@ class Gcode:
     def get_tokens_as_dict(self):
         """ Return the remaining tokans as a dict"""
         return {t[0]: t[1:] for t in self.get_tokens()}
-
 
     def _getCS(self, cmd):
         """ Compute a Checksum of the letters in the command """

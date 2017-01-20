@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """
-A filament sensor is a class of sensors that either 
-detect the presence of filament, measures filament travel distance 
-or filament diameter. For now, only filament distance 
-is implemented. The idea is that the filament sensor can 
-gather data from various sources and make decisions based 
-on the data it gathers. 
+A filament sensor is a class of sensors that either
+detect the presence of filament, measures filament travel distance
+or filament diameter. For now, only filament distance
+is implemented. The idea is that the filament sensor can
+gather data from various sources and make decisions based
+on the data it gathers.
 
 Author: Elias Bakken
 
@@ -28,6 +28,7 @@ from threading import Thread
 import time
 import logging
 
+
 class FilamentSensor:
 
     def __init__(self, name, sensor, ext_nr, printer=None):
@@ -46,16 +47,23 @@ class FilamentSensor:
         self.t = Thread(target=self._loop, name=self.name)
         self.running = True
         self.t.start()
-        
+
     def execute_alarm(self):
-        a = Alarm(Alarm.FILAMENT_JAM, 
-                "Filament deviation above limit ({0:.2f} mm) for extruder {1} ".format(self.error_pos*1000, self.ext_nr), 
-                "Filament jam on ext. {}".format(self.ext_nr))
-        logging.warning("Extruder {0} has reported too large deviation: {1:.2f} mm".format(self.ext_nr, self.error_pos*1000))
+        alarmmsg = ("Filament deviation above limit ({0:.2f} mm)"
+                    "for extruder {1} ").format(self.error_pos*1000,
+                                                self.ext_nr)
+
+        a = Alarm(Alarm.FILAMENT_JAM,
+                  alarmmsg,
+                  "Filament jam on ext. {}".format(self.ext_nr))
+
+        msg = "Extruder {0} has reported too large deviation: {1:.2f} mm"
+        logging.warning(msg.format(self.ext_nr, self.error_pos*1000))
 
     def get_status(self):
         """ return a human readable status report """
-        return "Filament sensor {0}: measured error is {1:.2f} mm ".format(self.name, self.error_pos*1000)
+        msg = "Filament sensor {0}: measured error is {1:.2f} mm"
+        return msg.format(self.name, self.error_pos*1000)
 
     def get_error(self):
         return "{0}:{1:.2f}".format(self.name, self.error_pos*1000)
@@ -69,13 +77,16 @@ class FilamentSensor:
         while self.running:
             self.current_pos = self.sensor.get_distance()
             if self.printer and self.printer.path_planner:
-                self.ideal_pos = self.printer.path_planner.get_extruder_pos(self.ext_nr)
+                ideal = self.printer.path_planner.get_extruder_pos(self.ext_nr)
+                self.ideal_pos = ideal
 
-            # Find the error in position, removing any previously reported error
-            self.error_pos = self.current_pos-self.ideal_pos-self.prev_alarm_pos
+            # Find the error in position, removing any previously
+            # reported error
+            self.error_pos = self.current_pos
+            self.error_pos -= self.ideal_pos-self.prev_alarm_pos
 
-            # Sound the alarm, if above level. 
-            if abs(self.error_pos) >= self.alarm_level: 
+            # Sound the alarm, if above level.
+            if abs(self.error_pos) >= self.alarm_level:
                 self.execute_alarm()
                 self.prev_alarm_pos = self.current_pos-self.ideal_pos
 
@@ -97,7 +108,6 @@ class FilamentSensor:
         self.t.join()
 
 
-
 if __name__ == '__main__':
     from RotaryEncoder import *
     r = RotaryEncoder("/dev/input/event1", 360, 3)
@@ -107,6 +117,3 @@ if __name__ == '__main__':
     time.sleep(10)
     r.stop()
     f.stop()
-
-
-
