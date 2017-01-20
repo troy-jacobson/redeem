@@ -1,5 +1,5 @@
 """
-A Cooler is a P controller 
+A Cooler is a P controller
 Author: Elias Bakken
 email: elias(dot)bakken(at)gmail(dot)com
 Website: http://www.thing-printer.com
@@ -23,6 +23,7 @@ from threading import Thread
 import time
 import logging
 
+
 class Cooler:
 
     def __init__(self, cold_end, fan, name, onoff_control):
@@ -31,9 +32,9 @@ class Cooler:
         self.fan = fan
         self.name = name                   # Name, used for debugging
         self.current_temp = 0.0
-        self.target_temp = 0.0             # Target temperature (Ts). Start off. 
-        self.P = 1.0                      # Proportional 
-        self.onoff_control = onoff_control # If we use PID or ON/OFF control
+        self.target_temp = 0.0            # Target temperature (Ts). Start off.
+        self.P = 1.0                      # Proportional
+        self.onoff_control = onoff_control  # If we use PID or ON/OFF control
         self.ok_range = 4.0
 
     def set_target_temperature(self, temp):
@@ -55,7 +56,7 @@ class Cooler:
         """ Stops the heater and the PID controller """
         self.enabled = False
         # Wait for PID to stop
-        while self.disabled == False:
+        while self.disabled is False:
             time.sleep(0.2)
         # The PID loop has finished
         self.fan.set_power(0.0)
@@ -66,30 +67,27 @@ class Cooler:
         self.disabled = False
         self.t = Thread(target=self.keep_temperature, name=self.name)
         self.t.daemon = True
-        self.t.start()		
+        self.t.start()
 
     def set_p_value(self, P):
         """ Set values for Proportional, Integral, Derivative"""
-        self.P = P # Proportional
+        self.P = P  # Proportional
 
     def keep_temperature(self):
         """ PID Thread that keeps the temperature stable """
         while self.enabled:
-            self.current_temp = self.cold_end.get_temperature()    
-            error = self.target_temp-self.current_temp    
-            
+            self.current_temp = self.cold_end.get_temperature()
+            error = self.target_temp-self.current_temp
+
             if self.onoff_control:
                 power = 1.0 if (self.P*error > 1.0) else 0.0
             else:
-                power = self.P*error  # The formula for the PID (only P)				
-                power = max(min(power, 1.0), 0.0)                             # Normalize to 0,1
+                power = self.P*error  # The formula for the PID (only P)
+                power = max(min(power, 1.0), 0.0)  # Normalize to 0,1
 
             # Invert the control since it'a a cooler
             power = 1.0 - power
-            #logging.info("Err: {}, Pwr: {}".format(error, power))
-            self.fan.set_value(power)            		 
+            # logging.info("Err: {}, Pwr: {}".format(error, power))
+            self.fan.set_value(power)
             time.sleep(1)
         self.disabled = True
-
-
-
