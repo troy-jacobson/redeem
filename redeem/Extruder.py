@@ -26,6 +26,7 @@ import logging
 import numpy as np
 from Alarm import Alarm
 
+
 class Heater(object):
     """
     A heater element that must keep temperature,
@@ -37,9 +38,12 @@ class Heater(object):
         self.mosfet = mosfet
         self.name = name                    # Name, used for debugging
         self.current_temp = 0.0
-        self.target_temp = 0.0              # Target temperature (Ts). Start off. 
-        self.last_error = 0.0               # Previous error term, used in calculating the derivative
-        self.error_integral = 0.0           # Accumulated integral since the temperature came within the boudry
+        # Target temperature (Ts). Start off.
+        self.target_temp = 0.0
+        # Previous error term, used in calculating the derivative
+        self.last_error = 0.0
+        # Accumulated integral since the temperature came within the boudry
+        self.error_integral = 0.0
         self.error_integral_limit = 100.0   # Integral temperature boundary
         self.Kp = 0.1
         self.Ti = 100.0
@@ -47,21 +51,21 @@ class Heater(object):
         self.onoff_control = onoff_control  # If we use PID or ON/OFF control
         self.ok_range = 4.0
         self.prefix = ""
-        self.sleep = 0.1                    # Time to sleep between measurements
-        self.max_power = 1.0                # Maximum power
+        self.sleep = 0.1  # Time to sleep between measurements
+        self.max_power = 1.0  # Maximum power
 
-        self.min_temp_enabled   = False  # Temperature error limit 
-        self.min_temp           = 0      # If temperature falls below this point from the target, disable. 
-        self.max_temp           = 250.0  # Max temp that can be reached before disabling printer. 
-        self.max_temp_rise      = 4.0    # Fastest temp can rise pr measrement
-        self.max_temp_fall      = 4.0    # Fastest temp can fall pr measurement
+        self.min_temp_enabled = False  # Temperature error limit
+        # If temperature falls below this point from the target, disable.
+        self.min_temp = 0
+        # Max temp that can be reached before disabling printer.
+        self.max_temp = 250.0
+        self.max_temp_rise = 4.0    # Fastest temp can rise pr measrement
+        self.max_temp_fall = 4.0    # Fastest temp can fall pr measurement
 
         self.extruder_error = False
         if not thermistor.sensor:
             logging.warning("Temperature sensor is not set, heater disabled")
             self.extruder_error = True
-
-
 
     def set_target_temperature(self, temp):
         """ Set the desired temperature of the extruder """
@@ -94,32 +98,34 @@ class Heater(object):
         """ Returns true if the temperature has been stable for n seconds """
         if len(self.temperatures) < int(seconds/self.sleep):
             return False
-        if max(self.temperatures[-int(seconds/self.sleep):]) > (self.target_temp + self.ok_range):
+        target_temp = (self.target_temp + self.ok_range)
+        if max(self.temperatures[-int(seconds/self.sleep):]) > target_temp:
             return False
-        if min(self.temperatures[-int(seconds/self.sleep):]) < (self.target_temp - self.ok_range):
+        if min(self.temperatures[-int(seconds/self.sleep):]) < target_temp:
             return False
         return True
 
     def get_noise_magnitude(self, measurements=10):
         """ Calculate and return the magnitude in the noise """
         measurements = min(measurements, len(self.temperatures))
-        #logging.debug("Measurements: "+str(self.temperatures))
+        # logging.debug("Measurements: "+str(self.temperatures))
         avg = np.average(self.temperatures[-measurements:])
         mag = np.max(self.temperatures[-measurements:])
-        #logging.debug("Avg: "+str(avg))
-        #logging.debug("Mag: "+str(mag))
+        # logging.debug("Avg: "+str(avg))
+        # logging.debug("Mag: "+str(mag))
         return abs(mag-avg)
 
     def set_min_temp(self, min_temp):
-        """ Set the minimum temperature. If current temp goes below this, 
+        """ Set the minimum temperature. If current temp goes below this,
         sound the alarm """
         self.current_min_temp = min_temp
-    
+
     def enable_min_temp(self):
         """ Enable minimum temperature alarm """
         self.min_temp_enabled = True
-        logging.info("Min temp alarm enabled at {} for {}".format(self.min_temp, self.name))
-    
+        msg = "Min temp alarm enabled at {} for {}"
+        logging.info(msg.format(self.min_temp, self.name))
+
     def disable(self):
         """ Stops the heater and the PID controller """
         self.target_temp = 0
@@ -142,7 +148,7 @@ class Heater(object):
         self.averages = [0]*self.avg
         self.prev_time = self.current_time = time.time()
         self.current_temp = self.thermistor.get_temperature()
-        self.temperatures = [self.current_temp]  
+        self.temperatures = [self.current_temp]
         self.enabled = True
         self.t = Thread(target=self.keep_temperature, name=self.name)
         self.t.start()
@@ -153,7 +159,8 @@ class Heater(object):
             while self.enabled:
                 self.current_temp = self.thermistor.get_temperature()
                 self.temperatures.append(self.current_temp)
-                self.temperatures[:-max(int(60/self.sleep), self.avg)] = [] # Keep only this much history
+                # Keep only this much history
+                self.temperatures[:-max(int(60/self.sleep), self.avg)] = []
 
                 self.error = self.target_temp-self.current_temp
                 self.errors.append(self.error)
@@ -168,10 +175,16 @@ class Heater(object):
                     derivative = self.get_error_derivative()
                     integral = self.get_error_integral()
                     # The standard formula for the PID
-                    power = self.Kp*(self.error + (1.0/self.Ti)*integral + self.Td*derivative)  
-                    power = max(min(power, self.max_power), 0.0)                         # Normalize to 0, max
-                    #if self.name =="E":
-                    #    logging.debug("Err: {0:.3f}, der: {1:.4f} int: {2:.2f}".format(self.error, derivative, integral))
+                    i = (1.0/self.Ti)*integral
+                    d = self.Td*derivative
+                    power = self.Kp*(self.error + i + d)
+                    # Normalize to 0, max
+                    power = max(min(power, self.max_power), 0.0)
+                    # if self.name =="E":
+                    #    logging.debug(("Err: {0:.3f}, der: {1:.4f}"
+                    #                   " int: {2:.2f}".format(self.error,
+                    #                                          derivative,
+                    #                                          integral))
 
                 # Run safety checks
                 self.time_diff = self.current_time-self.prev_time
@@ -185,7 +198,7 @@ class Heater(object):
                 if not self.extruder_error and self.current_temp > 0:
                     self.mosfet.set_power(power)
                 else:
-                    self.mosfet.set_power(0)        
+                    self.mosfet.set_power(0)
                 time.sleep(self.sleep)
         finally:
             # Disable this mosfet if anything goes wrong
@@ -193,54 +206,61 @@ class Heater(object):
 
     def get_error_derivative(self):
         """ Get the derivative of the temperature"""
-        # Using temperature and not error for calculating derivative 
+        # Using temperature and not error for calculating derivative
         # gets rid of the derivative kick. dT/dt
         der = (self.temperatures[-2]-self.temperatures[-1])/self.sleep
         self.averages.append(der)
         if len(self.averages) > 11:
             self.averages.pop(0)
-        #if self.name =="E":
+        # if self.name =="E":
         #    logging.debug(self.averages)
         return np.average(self.averages)
 
     def get_error_integral(self):
         """ Calculate and return the error integral """
         self.error_integral += self.error*self.sleep
-        # Avoid windup by clippping the integral part 
+        # Avoid windup by clippping the integral part
         # to teh reciprocal of the integral term
-        self.error_integral = np.clip(self.error_integral, 0, self.max_power*self.Ti/self.Kp)
+        self.error_integral = np.clip(self.error_integral,
+                                      0,
+                                      self.max_power*self.Ti/self.Kp)
         return self.error_integral
 
     def check_temperature_error(self):
-        """ Check the temperatures, make sure they are sane. 
+        """ Check the temperatures, make sure they are sane.
         Sound the alarm if something is wrong """
         if len(self.temperatures) < 2:
             return
         temp_delta = self.temperatures[-1]-self.temperatures[-2]
         # Check that temperature is not rising too quickly
         if temp_delta > self.max_temp_rise:
-            a = Alarm(Alarm.HEATER_RISING_FAST, 
-                "Temperature rising too quickly ({} degrees) for {}".format(temp_delta, self.name))
+            msg = "Temperature rising too quickly ({} degrees) for {}"
+            a = Alarm(Alarm.HEATER_RISING_FAST,
+                      msg.format(temp_delta, self.name))
         # Check that temperature is not falling too quickly
         if temp_delta < -self.max_temp_fall:
-            a = Alarm(Alarm.HEATER_FALLING_FAST, 
-                "Temperature falling too quickly ({} degrees) for {}".format(temp_delta, self.name))
-        # Check that temperature has not fallen below a certain setpoint from target
-        if self.min_temp_enabled and self.current_temp < (self.target_temp - self.min_temp):
-            a = Alarm(Alarm.HEATER_TOO_COLD, 
-                "Temperature below min set point ({} degrees) for {}".format(self.min_temp, self.name), 
-                "Alarm: Heater {}".format(self.name))
+            msg = "Temperature falling too quickly ({} degrees) for {}"
+            a = Alarm(Alarm.HEATER_FALLING_FAST,
+                      msg.format(temp_delta, self.name))
+        # Check that temperature has not fallen below a certain setpoint
+        # from target
+        target = (self.target_temp - self.min_temp)
+        if self.min_temp_enabled and self.current_temp < target:
+            msg = "Temperature below min set point ({} degrees) for {}"
+            a = Alarm(Alarm.HEATER_TOO_COLD,
+                      msg.format(self.min_temp, self.name),
+                      "Alarm: Heater {}".format(self.name))
         # Check if the temperature has gone beyond the max value
         if self.current_temp > self.max_temp:
-            a = Alarm(Alarm.HEATER_TOO_HOT, 
-                "Temperature beyond max ({} degrees) for {}".format(self.max_temp, self.name))                
-        # Check the time diff, only warn if something is off.     
+            msg = "Temperature beyond max ({} degrees) for {}"
+            a = Alarm(Alarm.HEATER_TOO_HOT,
+                      msg.format(self.max_temp, self.name))
+        # Check the time diff, only warn if something is off.
         if self.time_diff > 4:
             logging.warning("Heater time update large: " +
                             self.name + " temp: " +
                             str(self.current_temp) + " time delta: " +
                             str(self.current_time-self.prev_time))
-
 
 
 class Extruder(Heater):
@@ -256,5 +276,5 @@ class HBP(Heater):
     """ Subclass for heater, this is a Heated build platform """
     def __init__(self, thermistor, mosfet, onoff_control):
         Heater.__init__(self, thermistor, mosfet, "HBP", onoff_control)
-        self.sleep = 0.5 # Heaters have more thermal mass
+        self.sleep = 0.5  # Heaters have more thermal mass
         self.enable()
