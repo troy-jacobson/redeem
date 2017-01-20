@@ -5,7 +5,8 @@ Website: http://www.thing-printer.com
 License: GNU GPL v3: http://www.gnu.org/copyleft/gpl.html
 
  This work in this file has been heavily influenced by the work of Steve Graves
- from his document on Delta printer kinematics: https://groups.google.com/forum/#!topic/deltabot/V6ATBdT43eU
+ from his document on Delta printer kinematics:
+ https://groups.google.com/forum/#!topic/deltabot/V6ATBdT43eU
 
  Redeem is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -22,24 +23,24 @@ License: GNU GPL v3: http://www.gnu.org/copyleft/gpl.html
 """
 
 """
-This class is now used for holding all the parameters required to 
-define a delta bot. All the actual computation is done within a 
+This class is now used for holding all the parameters required to
+define a delta bot. All the actual computation is done within a
 C++ module within the NativePathPlanner class. See ./path_planner/Delta.*
 for details.
 """
 
 
 class Delta:
-    Hez = 0.0601    # Distance head extends below the effector.
-    L   = 0.322     # Length of the rod
-    r   = 0.175    # Radius of the columns
-    Ae  = 0.02032  # Effector offset
-    Be  = 0.02032
-    Ce  = 0.02032
+    Hez = 0.0601  # Distance head extends below the effector.
+    L = 0.322  # Length of the rod
+    r = 0.175  # Radius of the columns
+    Ae = 0.02032  # Effector offset
+    Be = 0.02032
+    Ce = 0.02032
 
-    A_radial = 0.00            # Radius error of the named column                          
-    B_radial = 0.00                                                                      
-    C_radial = 0.00                                                                     
-    A_tangential = 0.00                                                                 
-    B_tangential = 0.00                                                                
+    A_radial = 0.00  # Radius error of the named column
+    B_radial = 0.00
+    C_radial = 0.00
+    A_tangential = 0.00
+    B_tangential = 0.00
     C_tangential = 0.00
