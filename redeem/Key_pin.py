@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Common class listening to key events. 
+Common class listening to key events.
 A callback can be registered so an even
 
 Author: Elias Bakken
@@ -32,13 +32,15 @@ from threading import Thread
 from evdev import *
 from select import select
 
+
 class Key_pin:
     RISING = 0
     FALLING = 1
 
-    listener = None # Add this durin startup
+    # Add this during startup
+    listener = None
 
-    def __init__(self, name, key_code, edge=1, callback=None): 
+    def __init__(self, name, key_code, edge=1, callback=None):
         self.name = name
         self.code = key_code
         self.edge = edge
@@ -48,7 +50,9 @@ class Key_pin:
 
     def __str__(self):
         """ For debugging. """
-        return "Key_pin: {}, code: {}, edge: {} ".format(self.name, self.code, self.edge)
+        return "Key_pin: {}, code: {}, edge: {} ".format(self.name,
+                                                         self.code,
+                                                         self.edge)
 
 
 class Key_pin_listener:
@@ -72,14 +76,15 @@ class Key_pin_listener:
             self.running = False
             self.t.join()
         else:
-            logging.debug("Attempted to stop Key_pin_listener when it is not running")
+            msg = "Attempted to stop Key_pin_listener when it is not running"
+            logging.debug(msg)
 
     def _run(self):
         while self.running:
-            r,w,x = select([self.dev.fd], [], [], 0.5)
-            if r: 
+            r, w, x = select([self.dev.fd], [], [], 0.5)
+            if r:
                 for event in self.dev.read():
-                    #logging.debug(event)
+                    # logging.debug(event)
                     if event.type == ecodes.EV_KEY:
                         code = int(event.code)
                         val = int(event.value)
@@ -89,14 +94,12 @@ class Key_pin_listener:
                                 key.callback(key, event)
 
 
-
-
-
-
 if __name__ == '__main__':
+    logformat = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+
     logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M')
+                        format=logformat,
+                        datefmt='%m-%d %H:%M')
 
     def callback(key_pin, event):
         logging.info("Callback for "+str(key_pin))
