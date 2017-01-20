@@ -58,7 +58,7 @@ class TestTemperatureSensor(unittest.TestCase):
 
     def test_read_adc(self):
 
-        adc = str(4095.0/2)
+        adc = str(4095.0 / 2)
         expected_voltage = 0.9002198339032731
 
         with patch.object(builtins, 'open', mock_open(read_data=adc)):
