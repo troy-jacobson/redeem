@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Enable heaters with a pin. 
+Enable heaters with a pin.
 
 Author: Elias Bakken
 email: elias(dot)bakken(at)gmail(dot)com
@@ -24,6 +24,7 @@ License: GNU GPL v3: http://www.gnu.org/copyleft/gpl.html
 
 import Adafruit_BBIO.GPIO as GPIO
 
+
 class Enable:
 
     def __init__(self, pin):
@@ -37,9 +38,6 @@ class Enable:
         GPIO.output(self.pin, GPIO.HIGH)
 
 
-
 if __name__ == '__main__':
     en = Enable("P9_41")
     en.set_enabled()
-
-
