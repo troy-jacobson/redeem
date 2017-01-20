@@ -23,7 +23,8 @@ License: GNU GPL v3: http://www.gnu.org/copyleft/gpl.html
 
 from PWM import PWM
 
-class Mosfet(PWM):   
+
+class Mosfet(PWM):
     def __init__(self, channel):
         """ Channel is the channel that the thing is on (0-15) """
         self.channel = channel
@@ -37,12 +38,12 @@ class Mosfet(PWM):
     def get_power(self):
         return self.power
 
+
 if __name__ == '__main__':
 
-    PWM.set_frequency(1000)   
+    PWM.set_frequency(1000)
 
     mosfets = [0]*3
     for i in range(3):
         mosfets[i] = Mosfet(3+i)
         mosfets[i].set_power(0.25)
-
