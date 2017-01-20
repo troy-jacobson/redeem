@@ -34,6 +34,7 @@ import logging
 import numpy as np
 from scipy.optimize import leastsq as least_squares
 
+
 def calculate_probe_points(max_radius, radius_steps=2, angle_steps=6):
     """
     Calculate a set of probe points for delta printer calibration.
@@ -132,14 +133,22 @@ class AutoCalibrationDeltaParameters:
         yadj = delta.B_tangential - delta.A_tangential
         zadj = delta.C_tangential - delta.A_tangential
 
-        logging.debug("input delta parameters: Diagonal (L) = %f", diagonal/1000.)
-        logging.debug("input delta parameters: Radius   (r) = %f", radius/1000.)
-        logging.debug("input delta parameters: offset_x     = %f", center_offsets["X"])
-        logging.debug("input delta parameters: offset_y     = %f", center_offsets["Y"])
-        logging.debug("input delta parameters: offset_z     = %f", center_offsets["Z"])
-        logging.debug("input delta parameters: A_tangential = %f", delta.A_tangential)
-        logging.debug("input delta parameters: B_tangential = %f", delta.B_tangential)
-        logging.debug("input delta parameters: C_tangential = %f", delta.C_tangential)
+        logging.debug("input delta parameters: Diagonal (L) = %f",
+                      diagonal/1000.)
+        logging.debug("input delta parameters: Radius   (r) = %f",
+                      radius/1000.)
+        logging.debug("input delta parameters: offset_x     = %f",
+                      center_offsets["X"])
+        logging.debug("input delta parameters: offset_y     = %f",
+                      center_offsets["Y"])
+        logging.debug("input delta parameters: offset_z     = %f",
+                      center_offsets["Z"])
+        logging.debug("input delta parameters: A_tangential = %f",
+                      delta.A_tangential)
+        logging.debug("input delta parameters: B_tangential = %f",
+                      delta.B_tangential)
+        logging.debug("input delta parameters: C_tangential = %f",
+                      delta.C_tangential)
         logging.debug("input delta parameters: yadj         = %f", yadj)
         logging.debug("input delta parameters: zadj         = %f", zadj)
 
@@ -167,12 +176,18 @@ class AutoCalibrationDeltaParameters:
 
         logging.debug("output delta parameters: Diagonal (L) = %f", delta.L)
         logging.debug("output delta parameters: Radius   (r) = %f", delta.r)
-        logging.debug("output delta parameters: offset_x     = %f", center_offsets['X'])
-        logging.debug("output delta parameters: offset_y     = %f", center_offsets['Y'])
-        logging.debug("output delta parameters: offset_z     = %f", center_offsets['Z'])
-        logging.debug("output delta parameters: A_tangential = %f", delta.A_tangential)
-        logging.debug("output delta parameters: B_tangential = %f", delta.B_tangential)
-        logging.debug("output delta parameters: C_tangential = %f", delta.C_tangential)
+        logging.debug("output delta parameters: offset_x     = %f",
+                      center_offsets['X'])
+        logging.debug("output delta parameters: offset_y     = %f",
+                      center_offsets['Y'])
+        logging.debug("output delta parameters: offset_z     = %f",
+                      center_offsets['Z'])
+        logging.debug("output delta parameters: A_tangential = %f",
+                      delta.A_tangential)
+        logging.debug("output delta parameters: B_tangential = %f",
+                      delta.B_tangential)
+        logging.debug("output delta parameters: C_tangential = %f",
+                      delta.C_tangential)
         logging.debug("output delta parameters: yadj         = %f", self.yadj)
         logging.debug("output delta parameters: zadj         = %f", self.zadj)
 
@@ -181,13 +196,21 @@ class AutoCalibrationDeltaParameters:
         ret = None
 
         if len(new_params) == 3:
-            ret = cls(base.diagonal, base.radius, base.height, new_params[0], new_params[1], new_params[2], base.yadj, base.zadj)
+            ret = cls(base.diagonal, base.radius, base.height,
+                      new_params[0], new_params[1], new_params[2],
+                      base.yadj, base.zadj)
         elif len(new_params) == 4:
-            ret = cls(base.diagonal, new_params[0], base.height, new_params[1], new_params[2], new_params[3], base.yadj, base.zadj)
+            ret = cls(base.diagonal, new_params[0], base.height,
+                      new_params[1], new_params[2], new_params[3],
+                      base.yadj, base.zadj)
         elif len(new_params) == 6:
-            ret = cls(base.diagonal, new_params[0], base.height, new_params[1], new_params[2], new_params[3], new_params[4], new_params[5])
+            ret = cls(base.diagonal, new_params[0], base.height,
+                      new_params[1], new_params[2], new_params[3],
+                      new_params[4], new_params[5])
         elif len(new_params) == 7:
-            ret = cls(new_params[0], new_params[1], base.height, new_params[2], new_params[3], new_params[4], new_params[5], new_params[6])
+            ret = cls(new_params[0], new_params[1], base.height,
+                      new_params[2], new_params[3], new_params[4],
+                      new_params[5], new_params[6])
         else:
             raise ValueError("Only 3, 4, 6, or 7 parameters supported")
 
@@ -200,9 +223,11 @@ class AutoCalibrationDeltaParameters:
         elif num_factors == 4:
             return [self.radius, self.xstop, self.ystop, self.zstop]
         elif num_factors == 6:
-            return [self.radius, self.xstop, self.ystop, self.zstop, self.yadj, self.zadj]
+            return [self.radius, self.xstop, self.ystop,
+                    self.zstop, self.yadj, self.zadj]
         elif num_factors == 7:
-            return [self.diagonal, self.radius, self.xstop, self.ystop, self.zstop, self.yadj, self.zadj]
+            return [self.diagonal, self.radius, self.xstop, self.ystop,
+                    self.zstop, self.yadj, self.zadj]
 
     def to_dict(self):
         L = self.diagonal / 1000.
@@ -256,23 +281,23 @@ class AutoCalibrationDeltaParameters:
         height_change = new_point[2] - old_point[2]
         self.height += height_change
 
-    def transform(self, pos, ignore_endstops = False):
+    def transform(self, pos, ignore_endstops=False):
         x, y, z = pos
         Ha = z + np.sqrt(self.D2 -
-                           (x - self.towerX[0])**2 -
-                           (y - self.towerY[0])**2)
+                         (x - self.towerX[0])**2 -
+                         (y - self.towerY[0])**2)
         Hb = z + np.sqrt(self.D2 -
-                           (x - self.towerX[1])**2 -
-                           (y - self.towerY[1])**2)
+                         (x - self.towerX[1])**2 -
+                         (y - self.towerY[1])**2)
         Hc = z + np.sqrt(self.D2 -
-                           (x - self.towerX[2])**2 -
-                           (y - self.towerY[2])**2)
+                         (x - self.towerX[2])**2 -
+                         (y - self.towerY[2])**2)
         if ignore_endstops:
             return [Ha, Hb, Hc]
         else:
             return [Ha - self.xstop, Hb - self.ystop, Hc - self.zstop]
 
-    def inverse_transform(self, a, b, c, ignore_endstops = False):
+    def inverse_transform(self, a, b, c, ignore_endstops=False):
         Ha = a
         Hb = b
         Hc = c
@@ -309,7 +334,8 @@ class AutoCalibrationDeltaParameters:
         return x, y, z
 
 
-def _expected_residuals(new_raw_delta_params, points, base_delta_params, probe_motor_positions):
+def _expected_residuals(new_raw_delta_params, points, base_delta_params,
+                        probe_motor_positions):
     new_delta_params = AutoCalibrationDeltaParameters.from_base_and_raw_params(base_delta_params, new_raw_delta_params)
     new_points = map(lambda motor_position: new_delta_params.inverse_transform(motor_position[0], motor_position[1], motor_position[2]), probe_motor_positions)
     new_residuals = []
@@ -317,6 +343,7 @@ def _expected_residuals(new_raw_delta_params, points, base_delta_params, probe_m
         error = points[2][i] - new_points[i][2]
         new_residuals.append(error)
     return new_residuals
+
 
 def _calibrate_delta_parameters(pts, num_factors, delta_params):
     num_points = len(pts[0])
@@ -344,9 +371,14 @@ def _calibrate_delta_parameters(pts, num_factors, delta_params):
 
     raw_params = delta_params.to_raw_params(num_factors)
 
-    new_raw_params = least_squares(_expected_residuals, raw_params, args=(pts, delta_params, probe_motor_positions))[0]
+    new_raw_params = least_squares(_expected_residuals, raw_params,
+                                   args=(pts,
+                                         delta_params,
+                                         probe_motor_positions))[0]
 
-    return AutoCalibrationDeltaParameters.from_base_and_raw_params(delta_params, new_raw_params)
+    return AutoCalibrationDeltaParameters.from_base_and_raw_params(delta_params,
+                                                                   new_raw_params)
+
 
 def delta_auto_calibration(delta, center_offsets,
                            num_factors,
@@ -390,7 +422,8 @@ def delta_auto_calibration(delta, center_offsets,
     return new_delta_params.to_dict()
 
 if __name__ == '__main__':
-    real_printer_params = AutoCalibrationDeltaParameters(304.188, 160, 265, 0, 0, 0, 0, 0)
+    real_printer_params = AutoCalibrationDeltaParameters(304.188, 160, 265, 0,
+                                                         0, 0, 0, 0)
     fake_printer_params = real_printer_params
 
     angles = np.radians([90.0, 150.0, 210.0, 270.0, 330.0, 30.0])
@@ -400,24 +433,38 @@ if __name__ == '__main__':
         for angle in angles:
             points.append([radius * np.cos(angle), radius * np.sin(angle)])
 
-    xs = [0., 0., -43.3, -43.3, 0., 43.3, 43.3, 0., -64.95, -64.95, 0., 64.95]
-    ys = [0., 50., 25., -25., -50., -25., 25., 75., 37.5, -37.5, -75., -37.5]
-#    zs = [-1.1, -2.75, -1.78, -1.23, -1.6, -2.49, -3.13, -4.34, -2.96, -2.1, -2.65, -3.92, -6.85]
-    zs = [-10., -10., -10., -10., -10., -10., -10., -10., -10., -10., -10., -10. ]
+    xs = [0., 0., -43.3, -43.3, 0., 43.3,
+          43.3, 0., -64.95, -64.95, 0., 64.95]
+    ys = [0., 50., 25., -25., -50., -25.,
+          25., 75., 37.5, -37.5, -75., -37.5]
+#    zs = [-1.1, -2.75, -1.78, -1.23, -1.6, -2.49,
+#          -3.13, -4.34, -2.96, -2.1, -2.65, -3.92, -6.85]
+    zs = [-10., -10., -10., -10., -10., -10.,
+          -10., -10., -10., -10., -10., -10.]
 #    xs = []
 #    ys = []
 #    zs = []
 #    for point in points:
 #        stripped_point = [point[0], point[1], 0]
 #        delta_point = fake_printer_params.transform(stripped_point)
-#        real_point = real_printer_params.inverse_transform(delta_point[0], delta_point[1], delta_point[2])
+#        real_point = real_printer_params.inverse_transform(delta_point[0],
+#                                                           delta_point[1],
+#                                                           delta_point[2])
 #        xs.append(point[0])
 #        ys.append(point[1])
 #        zs.append(real_point[2])
 
-    calculated_printer_params = _calibrate_delta_parameters((np.array(xs), np.array(ys), np.array(zs) * -1), 3, fake_printer_params)
+    calculated_printer_params = _calibrate_delta_parameters((np.array(xs),
+                                                             np.array(ys),
+                                                             np.array(zs) * -1),
+                                                            3,
+                                                            fake_printer_params)
 
-    print("real: " + str(real_printer_params.to_dict()))
-    print("calculated: " + str(calculated_printer_params.to_dict()))
-    print(str([real_printer_params.xstop, real_printer_params.ystop, real_printer_params.zstop]))
-    print(str([calculated_printer_params.xstop, calculated_printer_params.ystop, calculated_printer_params.zstop]))
+    print("real: {}".format(real_printer_params.to_dict()))
+    print("calculated: {}".format(calculated_printer_params.to_dict()))
+    print("{}".format([real_printer_params.xstop,
+                       real_printer_params.ystop,
+                       real_printer_params.zstop]))
+    print("{}".format([calculated_printer_params.xstop,
+                       calculated_printer_params.ystop,
+                       calculated_printer_params.zstop]))
