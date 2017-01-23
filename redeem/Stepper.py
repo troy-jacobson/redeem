@@ -79,7 +79,7 @@ class Stepper(object):
 
     def get_steps_pr_meter(self):
         """ Get the number of steps pr meter """
-        return self.steps_pr_mm*self.microsteps * 1000.0
+        return self.steps_pr_mm * self.microsteps * 1000.0
 
     def get_step_bank(self):
         """ The pin that steps, it looks like GPIO1_31 """
@@ -173,7 +173,7 @@ class Stepper_00B1(Stepper):
             self.microsteps = 16
 
         self.shift_reg.set_state(state, 0xF0)
-        self.mmPrStep = 1.0/(self.steps_pr_mm*self.microsteps)
+        self.mmPrStep = 1.0 / (self.steps_pr_mm * self.microsteps)
 
         # update the Printer class with new values
         stepper_num = self.printer.axis_to_index(self.name)
@@ -187,13 +187,14 @@ class Stepper_00B1(Stepper):
         """ Current chopping limit (This is the value you can change) """
         self.current_value = i_rms
 
-        v_iref = 2.5*(i_rms/1.92)
+        v_iref = 2.5 * (i_rms / 1.92)
         if(v_iref > 2.5):
             warn = "Current ref for stepper {0} above limit. Setting to 2.5 V"
             warn = warn.format(self.name)
             logging.warning(warn)
             v_iref = 2.5
-        logging.debug("Setting votage to "+str(v_iref)+" for "+self.name)
+
+        logging.debug("Setting voltage to {} for {}".format(v_iref, self.name))
         self.dac.set_voltage(v_iref)
 
     def set_disabled(self, force_update=False):
@@ -254,7 +255,7 @@ class Stepper_00B2(Stepper_00B1):
     def set_disabled(self, force_update=False):
         if not self.enabled:
             return
-        logging.debug("Disabling stepper "+self.name)
+        logging.debug("Disabling stepper " + self.name)
         # X, Y, Z steppers are on the first shift reg, extruders have their own
         if self.name in ["X", "Y", "Z"]:
             ShiftRegister.registers[0].add_state(0x1)
@@ -267,7 +268,7 @@ class Stepper_00B2(Stepper_00B1):
     def set_enabled(self, force_update=False):
         if self.enabled:
             return
-        logging.debug("Enabling stepper "+self.name)
+        logging.debug("Enabling stepper " + self.name)
         # X, Y, Z steppers are on the first shift reg, extruders have their own
         if self.name in ["X", "Y", "Z"]:
             ShiftRegister.registers[0].remove_state(0x1)  # First bit low.
@@ -295,7 +296,7 @@ class Stepper_00B3(Stepper_00B2):
     def set_disabled(self, force_update=False):
         if not self.enabled:
             return
-        logging.debug("Disabling stepper "+self.name)
+        logging.debug("Disabling stepper " + self.name)
         # X, Y, Z steppers are on the first shift reg, extruders have their own
         if self.name in ["X", "Y", "Z"]:
             ShiftRegister.registers[0].add_state(0x1)
@@ -306,7 +307,7 @@ class Stepper_00B3(Stepper_00B2):
     def set_enabled(self, force_update=False):
         if self.enabled:
             return
-        logging.debug("Enabling stepper "+self.name)
+        logging.debug("Enabling stepper " + self.name)
         # X, Y, Z steppers are on the first shift reg, extruders have their own
         if self.name in ["X", "Y", "Z"]:
             ShiftRegister.registers[0].remove_state(0x1)  # First bit low.
@@ -317,7 +318,7 @@ class Stepper_00B3(Stepper_00B2):
 
     def set_stepper_power_down(self, pd):
         ''' Enables stepper low current mode on all steppers '''
-        logging.debug("Setting pwerdown to  "+str(pd))
+        logging.debug("Setting pwerdown to  " + str(pd))
         if pd:
             ShiftRegister.registers[4].add_state(0x1)
         else:
@@ -368,9 +369,9 @@ class Stepper_00A4(Stepper):
         # The voltage value on the VREF
         self.dacvalue = 0x00
         # The initial state of the inputs
-        self.state = ((1 << Stepper_00A4.SLEEP)
-                      | (1 << Stepper_00A4.RESET)
-                      | (1 << Stepper_00A4.ENABLED))
+        self.state = ((1 << Stepper_00A4.SLEEP) |
+                      (1 << Stepper_00A4.RESET) |
+                      (1 << Stepper_00A4.ENABLED))
         self.update()
 
     def set_enabled(self, force_update=False):
@@ -417,9 +418,16 @@ class Stepper_00A4(Stepper):
         self.microstepping = value
         self.microsteps = 2**value     # 2^val
         # Keep bit 0, 4, 5, 6 intact but replace bit 1, 2, 3
-        self.state = int("0b"+bin(self.state)[2:].rjust(8, '0')[:4]+bin(value)[2:].rjust(3, '0')[::-1]+"0", 2)
-        # self.state = int("0b"+bin(self.state)[2:].rjust(8, '0')[:4]+bin(value)[2:].rjust(3, '0')+bin(self.state)[-1:], 2)
-        self.mmPrStep = 1.0/(self.steps_pr_mm*self.microsteps)
+        self.state = int("0b"
+                         + bin(self.state)[2:].rjust(8, '0')[:4]
+                         + bin(value)[2:].rjust(3, '0')[::-1]
+                         + "0", 2)
+        # self.state = int("0b"
+        #                   + bin(self.state)[2:].rjust(8, '0')[:4]
+        #                   + bin(value)[2:].rjust(3, '0')
+        #                   + bin(self.state)[-1:], 2)
+
+        self.mmPrStep = 1.0 / (self.steps_pr_mm * self.microsteps)
 
         # update the Printer class with new values
         stepper_num = self.printer.axis_to_index(self.name)
@@ -449,7 +457,9 @@ class Stepper_00A4(Stepper):
     def update(self):
         # Invert shizzle
         self.shift_reg.set_state(self.state)
-        # logging.debug("Updated stepper {} to enabled, state: {}".format(self.name, bin(self.state)))
+        # logging.debug("Updated stepper {} to enabled, state: {}".format(
+        #    self.name, bin(self.state))
+        # )
 
 
 class Stepper_reach_00A4(Stepper_00A4):
