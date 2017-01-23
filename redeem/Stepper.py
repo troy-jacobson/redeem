@@ -418,10 +418,10 @@ class Stepper_00A4(Stepper):
         self.microstepping = value
         self.microsteps = 2**value     # 2^val
         # Keep bit 0, 4, 5, 6 intact but replace bit 1, 2, 3
-        self.state = int("0b"
-                         + bin(self.state)[2:].rjust(8, '0')[:4]
-                         + bin(value)[2:].rjust(3, '0')[::-1]
-                         + "0", 2)
+        self.state = int("0b" +
+                         bin(self.state)[2:].rjust(8, '0')[:4] +
+                         bin(value)[2:].rjust(3, '0')[::-1] +
+                         "0", 2)
         # self.state = int("0b"
         #                   + bin(self.state)[2:].rjust(8, '0')[:4]
         #                   + bin(value)[2:].rjust(3, '0')
