@@ -27,7 +27,7 @@ import struct
 import mmap
 
 PRU_ICSS = 0x4A300000
-PRU_ICSS_LEN = 512*1024
+PRU_ICSS_LEN = 512 * 1024
 SHARED_RAM_START = 0x00012000
 
 
@@ -37,7 +37,7 @@ class PruInterface:
         lon = [-1]
         with open("/dev/mem", "r+b") as f:
             ddr_mem = mmap.mmap(f.fileno(), PRU_ICSS_LEN, offset=PRU_ICSS)
-            lon = struct.unpack('L', ddr_mem[SHARED_RAM_START+offset:SHARED_RAM_START + offset + 4])
+            lon = struct.unpack('L', ddr_mem[SHARED_RAM_START + offset:SHARED_RAM_START + offset + 4])
         return lon[0]
 
     @staticmethod
@@ -45,7 +45,7 @@ class PruInterface:
         with open("/dev/mem", "r+b") as f:
             ddr_mem = mmap.mmap(f.fileno(), PRU_ICSS_LEN, offset=PRU_ICSS)
             lon = struct.pack('L', L)
-            ddr_mem[SHARED_RAM_START+offset:SHARED_RAM_START + offset + 4] = lon
+            ddr_mem[SHARED_RAM_START + offset:SHARED_RAM_START + offset + 4] = lon
         return
 
     @staticmethod
