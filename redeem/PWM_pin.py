@@ -47,7 +47,10 @@ class PWM_pin:
         self.set_enabled()
 
     def export_chip(self, chip, channel):
-        self.base = "/sys/class/pwm/pwmchip"+str(chip)+"/pwm"+str(channel)
+        self.base = ("/sys/class/pwm/pwmchip" +
+                     str(chip) +
+                     "/pwm" +
+                     str(channel))
         if not os.path.exists(self.base):
             chip_file = "/sys/class/pwm/pwmchip{}/export".format(self.chip)
             with open(chip_file, "w") as f:
@@ -56,24 +59,24 @@ class PWM_pin:
                 logging.warning("Unable to export PWM pin")
 
     def set_enabled(self, is_enabled=True):
-        path = self.base+"/enable"
+        path = self.base + "/enable"
         with open(path, "w") as f:
             f.write("1" if is_enabled else "0")
 
     def set_frequency(self, freq):
         """ Set the PWM frequency for all fans connected on this PWM-chip """
         # period is specified in picoseconds
-        period = int((1.0/float(freq))*(10**9))
+        period = int((1.0 / float(freq)) * (10 ** 9))
         self.period = period
-        path = self.base+"/period"
-        logging.debug("Setting period to "+str(period))
+        path = self.base + "/period"
+        logging.debug("Setting period to {}".format(period))
         with open(path, "w") as f:
             f.write(str(period))
 
     def set_value(self, value):
         """ Set the amount of on-time from 0..1 """
-        duty_cycle = int(self.period*float(value))
-        path = self.base+"/duty_cycle"
+        duty_cycle = int(self.period * float(value))
+        path = self.base + "/duty_cycle"
         # logging.debug("Setting duty_cycle to "+str(duty_cycle))
         with open(path, "w") as f:
             f.write(str(duty_cycle))
@@ -86,10 +89,10 @@ if __name__ == '__main__':
 
     while 1:
         for i in range(100):
-            p1.set_value(0.1+(i*0.001))
-            p2.set_value(0.1+(i*0.001))
+            p1.set_value(0.1 + (i * 0.001))
+            p2.set_value(0.1 + (i * 0.001))
             time.sleep(0.03)
         for i in range(100):
-            p1.set_value(0.2-(i*0.001))
-            p2.set_value(0.2-(i*0.001))
+            p1.set_value(0.2 - (i * 0.001))
+            p2.set_value(0.2 - (i * 0.001))
             time.sleep(0.03)
