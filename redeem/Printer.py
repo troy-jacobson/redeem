@@ -78,8 +78,8 @@ class Printer:
         self.num_axes = 8
 
         self.max_speeds = np.ones(self.num_axes)
-        self.min_speeds = np.ones(self.num_axes)*0.01
-        self.jerks = np.ones(self.num_axes)*0.01
+        self.min_speeds = np.ones(self.num_axes) * 0.01
+        self.jerks = np.ones(self.num_axes) * 0.01
         self.acceleration = [0.3] * self.num_axes
         self.home_speed = np.ones(self.num_axes)
         self.home_backoff_speed = np.ones(self.num_axes)
@@ -87,8 +87,8 @@ class Printer:
         self.steps_pr_meter = np.ones(self.num_axes)
         self.backlash_compensation = np.zeros(self.num_axes)
         self.backlash_state = np.zeros(self.num_axes)
-        self.soft_min = -np.ones(self.num_axes)*1000.0
-        self.soft_max = np.ones(self.num_axes)*1000.0
+        self.soft_min = -np.ones(self.num_axes) * 1000.0
+        self.soft_max = np.ones(self.num_axes) * 1000.0
         self.slaves = {key: "" for key in self.AXES[:self.num_axes]}
 
         # bed compensation
@@ -116,10 +116,14 @@ class Printer:
             stepper = self.steppers[axis]
             if stepper.in_use:
                 idx = Printer.axis_to_index(axis)
-                steps_per_second = self.min_speeds[idx]*self.steps_pr_meter[idx]
-                logging.debug("Axis {0} min steps/s = {1}".format(axis, steps_per_second))
+                steps_per_second = (self.min_speeds[idx] *
+                                    self.steps_pr_meter[idx])
+                msg = "Axis {0} min steps/s = {1}"
+                logging.debug(msg.format(axis, steps_per_second))
                 if steps_per_second < 1:
-                    err = "minimum speed of axis {0} is too low. Increase min_speed_{0}, microstepping_{0}, or adjust steps_pr_mm_{0}".format(axis.lower())
+                    err = ("minimum speed of axis {0} is too low. Increase "
+                           "min_speed_{0}, microstepping_{0}, or adjust "
+                           " steps_pr_mm_{0}").format(axis.lower())
                     logging.warning(err)
                     raise RuntimeError(err)
 
@@ -212,9 +216,9 @@ class Printer:
 
         logging.debug("save_settings: setting heater parameters")
         for name, heater in self.heaters.iteritems():
-            self.config.set('Heaters', 'pid_Kp_'+name, str(heater.Kp))
-            self.config.set('Heaters', 'pid_Ti_'+name, str(heater.Ti))
-            self.config.set('Heaters', 'pid_Td_'+name, str(heater.Td))
+            self.config.set('Heaters', 'pid_Kp_' + name, str(heater.Kp))
+            self.config.set('Heaters', 'pid_Ti_' + name, str(heater.Ti))
+            self.config.set('Heaters', 'pid_Td_' + name, str(heater.Td))
 
         logging.debug("save_settings: saving bed compensation matrix")
         # Bed compensation
