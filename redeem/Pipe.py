@@ -62,10 +62,10 @@ class Pipe:
 
         elif Pipe.check_socat():
             p = subprocess.Popen([
-                "socat", "-d", "-d", "-lf", "/var/log/redeem2"+self.prot,
-                "pty,mode=777,raw,echo=0,link="+pipe_0,
-                "pty,mode=777,raw,echo=0,link="+pipe_1],
-                                 stderr=subprocess.PIPE)
+                "socat", "-d", "-d", "-lf", "/var/log/redeem2" + self.prot,
+                "pty,mode=777,raw,echo=0,link=" + pipe_0,
+                "pty,mode=777,raw,echo=0,link=" + pipe_1],
+                stderr=subprocess.PIPE)
             while not os.path.exists(pipe_0):
                 time.sleep(0.1)
         self.rd = open(pipe_0, "r")
