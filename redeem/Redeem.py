@@ -84,7 +84,7 @@ class Redeem:
          - allows for running in a local directory when debugging
         """
         firmware_version = "1.3.0~The Running Man"
-        logging.info("Redeem initializing "+firmware_version)
+        logging.info("Redeem initializing " + firmware_version)
 
         printer = Printer()
         self.printer = printer
@@ -134,7 +134,7 @@ class Redeem:
             logfile = self.printer.config.get('System', 'logfile')
             formatter = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
             logger = logging.handlers.RotatingFileHandler(logfile,
-                                                          maxBytes=2*1024*1024)
+                                                          maxBytes=2 * 1024 * 1024)
             logger.setFormatter(logging.Formatter(formatter))
             logger.setLevel(level)
             printer.redeem_logging_handler = logger
@@ -185,13 +185,13 @@ class Redeem:
 
         # Order matches end stop inversion mask in Firmware
         for es in ["Z2", "Y2", "X2", "Z1", "Y1", "X1"]:
-            pin = self.printer.config.get("Endstops", "pin_"+es)
-            keycode = self.printer.config.getint("Endstops", "keycode_"+es)
-            invert = self.printer.config.getboolean("Endstops", "invert_"+es)
+            pin = self.printer.config.get("Endstops", "pin_" + es)
+            keycode = self.printer.config.getint("Endstops", "keycode_" + es)
+            invert = self.printer.config.getboolean("Endstops", "invert_" + es)
             self.printer.end_stops[es] = EndStop(printer, pin, keycode,
                                                  es, invert)
             stops = self.printer.config.get('Endstops',
-                                            'end_stop_'+es+'_stops')
+                                            'end_stop_' + es + '_stops')
             self.printer.end_stops[es].stops = stops
 
         # activate all the endstops
@@ -427,7 +427,7 @@ class Redeem:
             slave = printer.config.get('Steppers', 'slave_' + name)
             if slave:
                 printer.add_slave(name, slave)
-                logging.debug("Axis "+name+" has slave "+slave)
+                logging.debug("Axis " + name + " has slave " + slave)
 
         # Commit changes for the Steppers
         # Stepper.commit()
@@ -443,10 +443,10 @@ class Redeem:
 
         # Discover and add all DS18B20 cold ends.
         paths = glob.glob("/sys/bus/w1/devices/28-*/w1_slave")
-        logging.debug("Found cold ends: "+str(paths))
+        logging.debug("Found cold ends: " + str(paths))
         for i, path in enumerate(paths):
-            self.printer.cold_ends.append(ColdEnd(path, "ds18b20-"+str(i)))
-            logging.info("Found Cold end "+str(i)+" on " + path)
+            self.printer.cold_ends.append(ColdEnd(path, "ds18b20-" + str(i)))
+            logging.info("Found Cold end " + str(i) + " on " + path)
 
         # Make Mosfets, temperature sensors and extruders
         heaters = ["E", "H", "HBP"]
@@ -454,49 +454,48 @@ class Redeem:
             heaters.extend(["A", "B", "C"])
         for e in heaters:
             # Mosfets
-            channel = self.printer.config.getint("Heaters", "mosfet_"+e)
+            channel = self.printer.config.getint("Heaters", "mosfet_" + e)
             self.printer.mosfets[e] = Mosfet(channel)
             # Thermistors
-            adc = self.printer.config.get("Heaters", "path_adc_"+e)
-            if not self.printer.config.has_option("Heaters", "sensor_"+e):
-                sensor = self.printer.config.get("Heaters", "temp_chart_"+e)
-                logging.warning("Deprecated config option temp_chart_"+e+" use sensor_"+e+" instead.")
+            adc = self.printer.config.get("Heaters", "path_adc_" + e)
+            if not self.printer.config.has_option("Heaters", "sensor_" + e):
+                sensor = self.printer.config.get("Heaters", "temp_chart_" + e)
+                logging.warning("Deprecated config option temp_chart_" + e + " use sensor_" + e + " instead.")
             else:
-                sensor = self.printer.config.get("Heaters", "sensor_"+e)
-            self.printer.thermistors[e] = TemperatureSensor(adc, 'MOSFET '+e, sensor)
+                sensor = self.printer.config.get("Heaters", "sensor_" + e)
+            self.printer.thermistors[e] = TemperatureSensor(adc, 'MOSFET ' + e,
+                                                            sensor)
             self.printer.thermistors[e].printer = printer
 
             # Extruders
-            onoff = self.printer.config.getboolean('Heaters', 'onoff_'+e)
-            prefix = self.printer.config.get('Heaters', 'prefix_'+e)
-            max_power = self.printer.config.getfloat('Heaters', 'max_power_'+e)
+            onoff = self.printer.config.getboolean('Heaters', 'onoff_' + e)
+            prefix = self.printer.config.get('Heaters', 'prefix_' + e)
+            max_power = self.printer.config.getfloat('Heaters', 'max_power_' + e)
             if e != "HBP":
-                self.printer.heaters[e] = Extruder(
-                                        self.printer.steppers[e],
-                                        self.printer.thermistors[e],
-                                        self.printer.mosfets[e], e, onoff)
+                self.printer.heaters[e] = Extruder(self.printer.steppers[e],
+                                                   self.printer.thermistors[e],
+                                                   self.printer.mosfets[e], e, onoff)
             else:
-                self.printer.heaters[e] = HBP(
-                                        self.printer.thermistors[e],
-                                        self.printer.mosfets[e], onoff)
+                self.printer.heaters[e] = HBP(self.printer.thermistors[e],
+                                              self.printer.mosfets[e], onoff)
             self.printer.heaters[e].prefix = prefix
-            Kp = self.printer.config.getfloat('Heaters', 'pid_Kp_'+e)
+            Kp = self.printer.config.getfloat('Heaters', 'pid_Kp_' + e)
             self.printer.heaters[e].Kp = Kp
-            Ti = self.printer.config.getfloat('Heaters', 'pid_Ti_'+e)
+            Ti = self.printer.config.getfloat('Heaters', 'pid_Ti_' + e)
             self.printer.heaters[e].Ti = Ti
-            Td = self.printer.config.getfloat('Heaters', 'pid_Td_'+e)
+            Td = self.printer.config.getfloat('Heaters', 'pid_Td_' + e)
             self.printer.heaters[e].Td = Td
 
             # Min/max settings
-            min_temp = self.printer.config.getfloat('Heaters', 'min_temp_'+e)
+            min_temp = self.printer.config.getfloat('Heaters', 'min_temp_' + e)
             self.printer.heaters[e].min_temp = min_temp
-            max_temp = self.printer.config.getfloat('Heaters', 'max_temp_'+e)
+            max_temp = self.printer.config.getfloat('Heaters', 'max_temp_' + e)
             self.printer.heaters[e].max_temp = max_temp
             max_temp_rise = self.printer.config.getfloat('Heaters',
-                                                         'max_rise_temp_'+e)
+                                                         'max_rise_temp_' + e)
             self.printer.heaters[e].max_temp_rise = max_temp_rise
             max_temp_fall = self.printer.config.getfloat('Heaters',
-                                                         'max_fall_temp_'+e)
+                                                         'max_fall_temp_' + e)
             self.printer.heaters[e].max_temp_fall = max_temp_fall
 
         # Init the three fans. Argument is PWM channel number
@@ -529,22 +528,22 @@ class Redeem:
         servo_nr = 0
         servo_text = 'servo_{}'.format(servo_nr)
 
-        while(printer.config.has_option("Servos", servo_text+"_enable")):
-            if printer.config.getboolean("Servos", servo_text+"_enable"):
-                channel = printer.config.get("Servos", servo_text+"_channel")
+        while(printer.config.has_option("Servos", servo_text + "_enable")):
+            if printer.config.getboolean("Servos", servo_text + "_enable"):
+                channel = printer.config.get("Servos", servo_text + "_channel")
                 pulse_min = printer.config.getfloat("Servos",
-                                                    servo_text+"_pulse_min")
+                                                    servo_text + "_pulse_min")
                 pulse_max = printer.config.getfloat("Servos",
-                                                    servo_text+"_pulse_max")
+                                                    servo_text + "_pulse_max")
                 angle_min = printer.config.getfloat("Servos",
-                                                    servo_text+"_angle_min")
+                                                    servo_text + "_angle_min")
                 angle_max = printer.config.getfloat("Servos",
-                                                    servo_text+"_angle_max")
+                                                    servo_text + "_angle_max")
                 angle_init = printer.config.getfloat("Servos",
-                                                     servo_text+"_angle_init")
+                                                     servo_text + "_angle_init")
                 s = Servo(channel, pulse_min, pulse_max, angle_min, angle_max, angle_init)
                 printer.servos.append(s)
-                logging.info("Added servo "+str(servo_nr))
+                logging.info("Added servo {}".format(servo_nr))
             servo_nr += 1
 
         # Connect thermitors to fans
@@ -614,10 +613,10 @@ class Redeem:
                 r = RotaryEncoder(event, cpr, diameter)
                 printer.rotary_encoders.append(r)
                 # Append as Filament Sensor
-                ext_nr = Printer.axis_to_index(ex)-3
+                ext_nr = Printer.axis_to_index(ex) - 3
                 sensor = FilamentSensor(ex, r, ext_nr, printer)
                 alarm_level = printer.config.getfloat("Filament-sensors", "alarm-level-{}".format(ex))
-                logging.debug("Alarm level"+str(alarm_level))
+                logging.debug("Alarm level {}".format(alarm_level))
                 sensor.alarm_level = alarm_level
                 printer.filament_sensors.append(sensor)
 
@@ -630,25 +629,25 @@ class Redeem:
 
         # Bed compensation matrix
         printer.matrix_bed_comp = printer.load_bed_compensation_matrix()
-        logging.debug("Loaded bed compensation matrix: \n"+str(printer.matrix_bed_comp))
+        logging.debug("Loaded bed compensation matrix: \n{}".format(printer.matrix_bed_comp))
 
         for axis in printer.steppers.keys():
             i = Printer.axis_to_index(axis)
             printer.max_speeds[i] = printer.config.getfloat('Planner',
-                                                            'max_speed_'+axis.lower())
+                                                            'max_speed_' + axis.lower())
             printer.min_speeds[i] = printer.config.getfloat('Planner',
-                                                            'min_speed_'+axis.lower())
+                                                            'min_speed_' + axis.lower())
             printer.jerks[i] = printer.config.getfloat('Planner',
-                                                       'max_jerk_'+axis.lower())
+                                                       'max_jerk_' + axis.lower())
             printer.home_speed[i] = printer.config.getfloat('Homing',
-                                                            'home_speed_'+axis.lower())
+                                                            'home_speed_' + axis.lower())
             printer.home_backoff_speed[i] = printer.config.getfloat('Homing',
-                                                                    'home_backoff_speed_'+axis.lower())
+                                                                    'home_backoff_speed_' + axis.lower())
             printer.home_backoff_offset[i] = printer.config.getfloat('Homing',
-                                                                     'home_backoff_offset_'+axis.lower())
+                                                                     'home_backoff_offset_' + axis.lower())
             printer.steps_pr_meter[i] = printer.steppers[axis].get_steps_pr_meter()
             printer.backlash_compensation[i] = printer.config.getfloat('Steppers',
-                                                                       'backlash_'+axis.lower())
+                                                                       'backlash_' + axis.lower())
 
         printer.e_axis_active = printer.config.getboolean('Planner',
                                                           'e_axis_active')
@@ -861,11 +860,11 @@ class Redeem:
         Stepper.commit()
 
         for name, heater in self.printer.heaters.iteritems():
-            logging.debug("closing "+name)
+            logging.debug("closing {}".format(name))
             heater.disable()
 
         for name, comm in self.printer.comms.iteritems():
-            logging.debug("closing "+name)
+            logging.debug("closing {}".format(name))
             comm.close()
 
         self.printer.enable.set_disabled()
