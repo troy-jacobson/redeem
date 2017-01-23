@@ -129,26 +129,26 @@ class PruFirmware:
         # Copy the files to tmp, cos the pasm is really picky!
         src0 = self.firmware_source_file0
         src1 = self.firmware_source_file1
-        tmp_name_0 = "/tmp/"+os.path.splitext(os.path.basename(src0))[0]
-        tmp_name_1 = "/tmp/"+os.path.splitext(os.path.basename(src1))[0]
+        tmp_name_0 = "/tmp/" + os.path.splitext(os.path.basename(src0))[0]
+        tmp_name_1 = "/tmp/" + os.path.splitext(os.path.basename(src1))[0]
 
         debugmsg = 'Copying firmware 0 from {} to {}.p'
         logging.debug(debugmsg.format(self.firmware_source_file0, tmp_name_0))
-        shutil.copyfile(self.firmware_source_file0, tmp_name_0+".p")
+        shutil.copyfile(self.firmware_source_file0, tmp_name_0 + ".p")
 
         debugmsg = 'Copying firmware 1 from {} to {}.p'
         logging.debug(debugmsg.format(self.firmware_source_file1, tmp_name_1))
-        shutil.copyfile(self.firmware_source_file1, tmp_name_1+".p")
+        shutil.copyfile(self.firmware_source_file1, tmp_name_1 + ".p")
 
-        cmd0.extend([tmp_name_0+".p", tmp_name_0])
-        cmd1.extend([tmp_name_1+".p", tmp_name_1])
+        cmd0.extend([tmp_name_0 + ".p", tmp_name_0])
+        cmd1.extend([tmp_name_1 + ".p", tmp_name_1])
 
         logging.debug("Compiling firmware 0 with " + ' '.join(cmd0))
         try:
             subprocess.check_output(cmd0, stderr=subprocess.STDOUT)
             # Move the file back
-            shutil.copyfile(tmp_name_0+".bin",
-                            self.binary_filename_compiler0+".bin")
+            shutil.copyfile(tmp_name_0 + ".bin",
+                            self.binary_filename_compiler0 + ".bin")
             logging.debug("Compilation succeeded.")
         except subprocess.CalledProcessError as e:
             logging.exception('Error while compiling firmware: ')
@@ -159,8 +159,8 @@ class PruFirmware:
         try:
             subprocess.check_output(cmd1, stderr=subprocess.STDOUT)
             # Move the file back
-            shutil.copyfile(tmp_name_1+".bin",
-                            self.binary_filename_compiler1+".bin")
+            shutil.copyfile(tmp_name_1 + ".bin",
+                            self.binary_filename_compiler1 + ".bin")
             logging.debug("Compilation succeeded.")
         except subprocess.CalledProcessError as e:
             logging.exception('Error while compiling firmware: ')
@@ -211,7 +211,11 @@ class PruFirmware:
                 configFile.write(confline.format(name, dir_pin))
 
                 # Define direction
-                direction = "0" if self.config.getint('Steppers', 'direction_' + name) > 0 else "1"
+                if self.config.getint('Steppers', 'direction_' + name) > 0:
+                    direction = "0"
+                else:
+                    direction = "1"
+
                 confline = '#define STEPPER_{}_DIRECTION\t\t{}\n'
                 configFile.write(confline.format(name, direction))
 
@@ -241,7 +245,10 @@ class PruFirmware:
             # Construct the end stop inversion mask
             inversion_mask = "#define INVERSION_MASK\t\t0b00"
             for name in ["Z2", "Y2", "X2", "Z1", "Y1", "X1"]:
-                inversion_mask += "1" if self.config.getboolean('Endstops', 'invert_' + name) else "0"
+                if self.config.getboolean('Endstops', 'invert_' + name):
+                    inversion_mask += "1"
+                else:
+                    inversion_mask += "0"
 
             configFile.write(inversion_mask + "\n")
 
@@ -267,7 +274,12 @@ class PruFirmware:
                     elif (m.group(2) == "neg"):
                         direction = 1
                     else:
-                        direction = 1 if self.config.getint('Steppers', 'direction_' + stepper[0]) > 0 else -1
+                        if self.config.getint('Steppers',
+                                              'direction_' + stepper[0]) > 0:
+                            direction = 1
+                        else:
+                            direction = -1
+
                         if (m.group(2) == "ccw"):
                             direction *= -1
 
@@ -278,7 +290,7 @@ class PruFirmware:
 
                 logging.debug("Endstop {0} mask = {1}".format(name, bin(mask)))
 
-                bin_mask = "0b"+(bin(mask)[2:]).zfill(16)
+                bin_mask = "0b" + (bin(mask)[2:]).zfill(16)
                 confline = '#define STEPPER_MASK_{}\t\t{}\n'.format(name,
                                                                     bin_mask)
                 configFile.write(confline)
@@ -295,7 +307,8 @@ class PruFirmware:
                 configFile.write(confline)
             # for name, bank in step_banks.iteritems():
                 # bank = (~bank & 0xFFFFFFFF)
-                # configFile.write("#define GPIO"+name+"_STEP_MASK\t\t" +bin(bank)+ "\n");
+                # configFile.write("#define GPIO"+name+"_STEP_MASK\t\t" +
+                #                   bin(bank)+ "\n");
             for name, bank in dir_banks.iteritems():
                 # bank = (~bank & 0xFFFFFFFF)
                 confline = '#define GPIO{}_DIR_MASK\t\t{}\n'.format(name,
@@ -346,9 +359,9 @@ if __name__ == '__main__':
                                     7, 7, "C")
 
     for es in ["X1", "X2", "Y1", "Y2", "Z1", "Z2"]:
-        pin = printer.config.get("Endstops", "pin_"+es)
-        keycode = printer.config.getint("Endstops", "keycode_"+es)
-        invert = printer.config.getboolean("Endstops", "invert_"+es)
+        pin = printer.config.get("Endstops", "pin_" + es)
+        keycode = printer.config.getint("Endstops", "keycode_" + es)
+        invert = printer.config.getboolean("Endstops", "invert_" + es)
         printer.end_stops[es] = EndStop(pin, keycode, es, invert)
 
     pasm = "/home/elias/workspace/am335x_pru_package/pru_sw/utils/pasm"
