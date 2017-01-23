@@ -44,7 +44,7 @@ class PluginsController:
             if plugin == '':
                 continue
 
-            pluginClassName = plugin+'Plugin'
+            pluginClassName = plugin + 'Plugin'
 
             if pluginClassName in pluginClasses:
                 pluginInstance = pluginClasses[pluginClassName](self.printer)
@@ -87,8 +87,8 @@ class PluginsController:
     @staticmethod
     def load_classes_in_module(module, classes):
         for module_name, obj in inspect.getmembers(module):
-            if inspect.ismodule(obj) and (obj.__name__.startswith('plugins')
-               or obj.__name__.startswith('redeem.plugins')):
+            if inspect.ismodule(obj) and (obj.__name__.startswith('plugins') or
+               obj.__name__.startswith('redeem.plugins')):
                 PluginsController.load_classes_in_module(obj, classes)
             elif inspect.isclass(obj) and \
                     issubclass(obj, AbstractPlugin.AbstractPlugin) and \
