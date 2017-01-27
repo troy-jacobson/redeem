@@ -76,9 +76,9 @@ class PWM(object):
     @staticmethod
     def set_value(value, channel):
         """ Set the amount of on-time from 0..1 """
-        off = int(value*4095)
+        off = int(value * 4095)
         byte_list = [0x00, 0x00, off & 0xFF, off >> 8]
-        PWM.i2c.writeList(0x06+(4*channel), byte_list)
+        PWM.i2c.writeList(0x06 + (4 * channel), byte_list)
 
 
 if __name__ == '__main__':
@@ -97,9 +97,9 @@ if __name__ == '__main__':
     PWM.set_frequency(1000)
     while True:
         for i in np.linspace(0.0, 6.28, 100):
-            logging.info((0.5+0.5*np.sin(i)))
-            PWM.set_value((0.5+0.5*np.sin(i+0.0*np.pi/2.0))**exp, 7)
-            PWM.set_value((0.5+0.5*np.sin(i+1.0*np.pi/2.0))**exp, 8)
-            PWM.set_value((0.5+0.5*np.sin(i+2.0*np.pi/2.0))**exp, 9)
-            PWM.set_value((0.5+0.5*np.sin(i+3.0*np.pi/2.0))**exp, 10)
+            logging.info((0.5 + 0.5 * np.sin(i)))
+            PWM.set_value((0.5 + 0.5 * np.sin(i + 0.0 * np.pi / 2.0)) ** exp, 7)
+            PWM.set_value((0.5 + 0.5 * np.sin(i + 1.0 * np.pi / 2.0)) ** exp, 8)
+            PWM.set_value((0.5 + 0.5 * np.sin(i + 2.0 * np.pi / 2.0)) ** exp, 9)
+            PWM.set_value((0.5 + 0.5 * np.sin(i + 3.0 * np.pi / 2.0)) ** exp, 10)
             time.sleep(0.01)

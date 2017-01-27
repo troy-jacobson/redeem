@@ -48,7 +48,7 @@ class RotaryEncoder:
         for event in self.dev.read_loop():
             if event.type == ecodes.EV_REL:
                 self.step += event.value
-                self.rounds = self.step/self.cpr
+                self.rounds = self.step / self.cpr
                 distance = self.rounds * math.pi * self.d
                 self.distance = distance if distance != 0 else 0
             if not self.running:

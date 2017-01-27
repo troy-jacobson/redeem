@@ -47,10 +47,10 @@ class Servo:
 
         self.angle_min = angle_min
         self.angle_max = angle_max
-        self.angle_total = angle_max-angle_min
+        self.angle_total = angle_max - angle_min
         self.pulse_width_min = pulse_width_min
         self.pulse_width_max = pulse_width_max
-        self.pulse_width_total = pulse_width_max-pulse_width_min
+        self.pulse_width_total = pulse_width_max - pulse_width_min
 
         self.turnoff_timeout = turnoff_timeout
 
@@ -64,9 +64,9 @@ class Servo:
         logging.debug("Angle min: {} deg".format(self.angle_min))
         logging.debug("Angle max: {} deg".format(self.angle_max))
         logging.debug("Angle tot: {} deg".format(self.angle_total))
-        logging.debug("Pulse min: {} ms".format(self.pulse_width_min*1000.0))
-        logging.debug("Pulse max: {} ms".format(self.pulse_width_max*1000.0))
-        logging.debug("Pulse tot: {} ms".format(self.pulse_width_total*1000.0))
+        logging.debug("Pulse min: {} ms".format(self.pulse_width_min * 1000.0))
+        logging.debug("Pulse max: {} ms".format(self.pulse_width_max * 1000.0))
+        logging.debug("Pulse tot: {} ms".format(self.pulse_width_total * 1000.0))
 
         self.queue = JoinableQueue(1000)
         self.lastCommandTime = 0
@@ -96,7 +96,7 @@ class Servo:
             ShiftRegister.make(5)
             self.shift_reg = ShiftRegister.registers[shiftreg_nr]
         self.set_enabled()
-        self.pwm.set_value(self.angle_to_pulse_width(init_angle)/self.pulse_length)
+        self.pwm.set_value(self.angle_to_pulse_width(init_angle) / self.pulse_length)
 
     def set_enabled(self, is_enabled=True):
         if is_enabled:
@@ -121,13 +121,17 @@ class Servo:
         if angle == last_angle:
             return
 
-        t = (math.fabs(angle-last_angle)/speed) / math.fabs(angle-last_angle)
+        t = (math.fabs(angle - last_angle) / speed) / math.fabs(angle - last_angle)
 
         if angle >= last_angle:
-            for a in xrange(int(last_angle), int(angle+1), 1):
+            for a in xrange(int(last_angle),
+                            int(angle + 1),
+                            1):
                 self.queue.put((self.angle_to_pulse_width(a), t))
         else:
-            for a in xrange(int(last_angle), int(angle-1), -1):
+            for a in xrange(int(last_angle),
+                            int(angle - 1),
+                            -1):
                 self.queue.put((self.angle_to_pulse_width(a), t))
 
         self.last_pulse_width = pulse_width
@@ -149,9 +153,9 @@ class Servo:
             try:
                 ev = self.queue.get(block=True, timeout=1)
             except Queue.Empty:
-                if (self.turnoff_timeout > 0
-                   and self.lastCommandTime > 0
-                   and time.time() - self.lastCommandTime > self.turnoff_timeout):
+                if (self.turnoff_timeout > 0 and
+                   self.lastCommandTime > 0 and
+                   time.time() - self.lastCommandTime > self.turnoff_timeout):
                     self.lastCommandTime = 0
                     self.turn_off()
                 continue
@@ -161,17 +165,17 @@ class Servo:
 
             self.current_pulse_width = ev[0]
             # logging.debug("setting pulse width to "+str(self.current_pulse_width))
-            self.pwm.set_value(self.current_pulse_width/self.pulse_length)
+            self.pwm.set_value(self.current_pulse_width / self.pulse_length)
             self.lastCommandTime = time.time()
             time.sleep(ev[1])
 
             self.queue.task_done()
 
     def angle_to_pulse_width(self, angle):
-        return ((angle-self.angle_min)/self.angle_total)*self.pulse_width_total + self.pulse_width_min
+        return ((angle - self.angle_min) / self.angle_total) * self.pulse_width_total + self.pulse_width_min
 
     def pulse_width_to_angle(self, pulse_width):
-        return (((pulse_width-self.pulse_width_min)/(self.pulse_width_total))*self.angle_total)+self.angle_min
+        return (((pulse_width - self.pulse_width_min) / (self.pulse_width_total)) * self.angle_total) + self.angle_min
 
 
 if __name__ == '__main__':

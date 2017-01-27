@@ -161,13 +161,13 @@ class PathPlanner:
             state = self.prev.ideal_end_pos
         pos = {}
         for index, axis in enumerate(Printer.AXES[:Printer.MAX_AXES]):
-            pos[axis] = state[index]*scale
+            pos[axis] = state[index] * scale
         return pos
 
     def get_extruder_pos(self, ext_nr):
         """ Return the current position of this extruder """
         state = self.native_planner.getState()
-        return state[3+ext_nr]
+        return state[3 + ext_nr]
 
     def wait_until_done(self):
         """ Wait until the queue is empty """
@@ -391,9 +391,9 @@ class PathPlanner:
         start_state = self.native_planner.getState()
 
         # calculate how many steps the requested z movement will require
-        steps = np.ceil(z*self.printer.steps_pr_meter[2])
-        z_dist = steps/self.printer.steps_pr_meter[2]
-        logging.debug("Steps total: "+str(steps))
+        steps = np.ceil(z * self.printer.steps_pr_meter[2])
+        z_dist = steps / self.printer.steps_pr_meter[2]
+        logging.debug("Steps total: " + str(steps))
 
         # select the relative end point
         # this is not axis_config dependent as we are not swapping
@@ -417,11 +417,11 @@ class PathPlanner:
 
         # get the number of steps that we haven't done
         steps_remaining = PruInterface.get_steps_remaining()
-        logging.debug("Steps remaining : "+str(steps_remaining))
+        logging.debug("Steps remaining : " + str(steps_remaining))
 
         # Calculate how many steps the Z axis moved
         steps -= steps_remaining
-        z_dist = steps/self.printer.steps_pr_meter[2]
+        z_dist = steps / self.printer.steps_pr_meter[2]
 
         # make a move to take us back to where we started
         end = {"Z": z_dist}
@@ -443,7 +443,7 @@ class PathPlanner:
         # (updates firmware if required)
         self.printer.homing(False)
 
-        return -z_dist+start_pos["Z"]
+        return -z_dist + start_pos["Z"]
 
     def autocalibrate_delta_printer(self, num_factors,
                                     simulate_only,
@@ -461,14 +461,18 @@ class PathPlanner:
 
         # update the native planner with the new values
 
-        self.native_planner.delta_bot.setMainDimensions(
-                Delta.Hez, Delta.L, Delta.r)
-        self.native_planner.delta_bot.setEffectorOffset(
-                Delta.Ae, Delta.Be, Delta.Ce)
-        self.native_planner.delta_bot.setRadialError(
-                Delta.A_radial, Delta.B_radial, Delta.C_radial)
-        self.native_planner.delta_bot.setTangentError(
-                Delta.A_tangential, Delta.B_tangential, Delta.C_tangential)
+        self.native_planner.delta_bot.setMainDimensions(Delta.Hez,
+                                                        Delta.L,
+                                                        Delta.r)
+        self.native_planner.delta_bot.setEffectorOffset(Delta.Ae,
+                                                        Delta.Be,
+                                                        Delta.Ce)
+        self.native_planner.delta_bot.setRadialError(Delta.A_radial,
+                                                     Delta.B_radial,
+                                                     Delta.C_radial)
+        self.native_planner.delta_bot.setTangentError(Delta.A_tangential,
+                                                      Delta.B_tangential,
+                                                      Delta.C_tangential)
         self.native_planner.delta_bot.recalculate()
 
         return params
@@ -532,8 +536,8 @@ class PathPlanner:
         TODO: does this function do anything?
         Should it be setting the tool axis?
         """
-        if ext_nr in range(Printer.MAX_AXES-3):
-            logging.debug("Selecting "+str(ext_nr))
+        if ext_nr in range(Printer.MAX_AXES - 3):
+            logging.debug("Selecting " + str(ext_nr))
             # Printer.steps_pr_meter[3] = self.printer.steppers[
             #        Printer.index_to_axis(ext_nr+3)
             #        ].get_steps_pr_meter()
