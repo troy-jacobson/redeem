@@ -41,10 +41,10 @@ class PWM_pin:
       self.impl = PWM_pin_sys(pin, frequency, duty_cycle)
 
     def set_frequency(self, freq):
-      self.impl.set_frequency(self, freq)
+      self.impl.set_frequency(freq)
 
     def set_value(self, value):
-      self.impl.set_value(self, value)
+      self.impl.set_value(value)
 
 if __name__ == '__main__':
 

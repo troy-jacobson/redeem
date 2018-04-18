@@ -14,15 +14,6 @@ os.environ['OPT'] = " ".join(
 INSTALL_REQUIRES = []
 DEPENDENCY_REQUIRES = []
 
-for item in pip.req.parse_requirements(
-        'requirements.txt', session="somesession"):
-    if isinstance(item, pip.req.InstallRequirement):
-        if item.link is not None:
-            link = item.link.url.replace('git+', '')
-            DEPENDENCY_REQUIRES.append(link)
-        else:
-            INSTALL_REQUIRES.append(str(item.req))
-
 #yapf: disable
 pathplanner = Extension(
     '_PathPlannerNative',
@@ -96,8 +87,6 @@ setup(
     license="GPLv3",
     keywords="3d printer firmware",
     platforms=["BeagleBone"],
-    install_requires=INSTALL_REQUIRES,
-    dependency_links=DEPENDENCY_REQUIRES,
     url=__url__,
     ext_modules=[pathplanner],
     entry_points= {
