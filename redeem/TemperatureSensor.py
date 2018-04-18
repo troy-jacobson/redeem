@@ -177,11 +177,13 @@ class PT100(TemperatureSensor):
     # The following calculations are based on the PT100 connected in the same as as a thermistor.
     # Connecting it this way will give very low accuracy, but better accuracy require hardware modification.
     def voltage_to_resistance(self,voltage):
-
         """ Convert the voltage to a resistance value """
         if voltage == 0 or (abs(voltage - 1.8) < 0.0001):
             return 10000000.0
-        return self.pullup / ((1.8 / voltage) - 1.0)
+        vscale = 1.615*10
+        rr = self.pullup / ((vscale / voltage) - 1.0)
+        #logging.info("PT100 voltage: {0} resistance: {1}".format(voltage, rr))
+        return rr
 
 
     def get_temperature(self, voltage):
