@@ -80,7 +80,7 @@ t = -r0*a + (r0^2*a^2 - 4*r0*b * (r0-r))^(1/2) / 2*r0*b
 
 pt100 = [
     # identifier,               pullup, r0,     a,          b
-    ["E3D-PT100-AMPLIFIER", 4400, 100, 0.0.00385, -5.77e-07],
+    ["E3D-PT100-AMPLIFIER", 4400, 100, 0.00385, -5.77e-07],
     ["PT100-GENERIC-PLATINUM", 4700, 100, 0.0039083, -5.77e-07]
 ]
 

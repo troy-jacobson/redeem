@@ -182,7 +182,7 @@ class PT100(TemperatureSensor):
             return 10000000.0
         vscale = 1.615*10
         rr = self.pullup / ((vscale / voltage) - 1.0)
-        #logging.info("PT100 voltage: {0} resistance: {1}".format(voltage, rr))
+        logging.info("PT100 voltage: {0} resistance: {1}".format(voltage, rr))
         return rr
 
 
@@ -198,6 +198,7 @@ class Tboard (TemperatureSensor):
 
         self.pin = pin
         self.name = name
+
         self.voltage_pr_degree = float(sensorConfiguration[1])
         logging.debug("Initialized temperature sensor at {0} with temp/deg = {1}".format(pin, sensorConfiguration[1]))
 
