@@ -52,6 +52,14 @@ PathPlanner::PathPlanner(unsigned int cacheSize, AlarmCallback& alarmCallback)
 
   axis_config = AXIS_CONFIG_XY;
   has_slaves = false;
+  master.clear();
+  slave.clear();
+
+  for(int axis = 0; axis < NUM_AXES; axis++)
+  {
+    axes_stepping_together[axis] = 1 << axis;
+  }
+
   state.zero();
   lastProbeDistance = 0;
   queue_move_fail = true;
@@ -164,9 +172,9 @@ void PathPlanner::queueMove(VectorN endWorldPos,
     LOG("After matrix X: "<< endWorldPos[0]<<" Y: "<< endWorldPos[1]<<" Z: "<< endWorldPos[2]<<"\n");
   }
 
-  // handle any slaving activity
-  handleSlaves(startWorldPos, endWorldPos);
-
+  // clear any movements on slave axes so they don't mess things up later
+  clearSlaveAxesMovements(startWorldPos, endWorldPos);
+	
   // Get the vector to move us from where we are, to where we ideally want to be.
   bool possibleMove = true;
   IntVectorN endPos = worldToMachine(endWorldPos, &possibleMove);
@@ -786,8 +794,8 @@ void PathPlanner::runMove(
       	assert(!(cmd.step & (1 << i)));
       	assert(step.axis == i);
 
-      	cmd.step |= 1 << i;
-      	cmd.direction |= ((unsigned char)step.direction) << i;
+	cmd.step |= axes_stepping_together[i];
+	cmd.direction |= (step.direction ? 0xff : 0) & axes_stepping_together[i];
 
       	stepIndex[i]++;
       	finalStepTimes[i] = stepTime;
@@ -795,6 +803,11 @@ void PathPlanner::runMove(
     }
 
     assert(cmd.step != 0);
+    
+    if (probeDistanceTraveled)
+    {
+      cmd.options |= STEPPER_COMMAND_OPTION_CARRY_BLOCKED_STEPPERS;
+    }
 
     if (commandsIndex == commandsLength) {
       pru.push_block((uint8_t*)&commands[0], sizeof(SteppersCommand)*commandsIndex, sizeof(SteppersCommand), commandsIndex);
@@ -831,6 +844,8 @@ void PathPlanner::runMove(
     SteppersCommand& cmd = commands[commandsIndex - 1];
     if (wait) cmd.options = STEPPER_COMMAND_OPTION_SYNCWAIT_EVENT;
     else cmd.options = STEPPER_COMMAND_OPTION_SYNC_EVENT;
+
+    if (probeDistanceTraveled) cmd.options |= STEPPER_COMMAND_OPTION_CARRY_BLOCKED_STEPPERS;
   }
 
   if (commandsIndex != 0) {
@@ -883,6 +898,8 @@ void PathPlanner::runMove(
     assert(stepsRemaining < probeSteps.size());
     IntVectorN deltasTraveled;
 
+    LOG("probe took " << stepsTraveled << " of " << probeSteps.size() << " steps");
+
     for (size_t i = 0; i < stepsTraveled; i++)
     {
       for (int axis = 0; axis < NUM_AXES; axis++)
@@ -894,6 +911,15 @@ void PathPlanner::runMove(
       	}
       }
     }
+
+    // Zero out any slave axes - it's easier to do so here than in the loop
+    if (has_slaves) {
+      for (auto slaveAxis : slave) {
+	deltasTraveled[slaveAxis] = 0;
+      }
+    }
+
+    LOG("probe deltas: " << deltasTraveled[0] << " " << deltasTraveled[1] << " " << deltasTraveled[2]);
 
     *probeDistanceTraveled = deltasTraveled;
   }
