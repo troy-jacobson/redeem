@@ -648,11 +648,18 @@ void PathPlanner::run() {
 
     if (cur->isProbeMove())
     {
-      const VectorN startPos = machineToWorld(cur->getStartMachinePos());
+      VectorN startPos = machineToWorld(cur->getStartMachinePos());
 
       assert(state == cur->getStartMachinePos());
       state = cur->getStartMachinePos() + probeDistanceTraveled;
-      const VectorN endPos = getState();
+      VectorN endPos = getState();
+
+      if ( has_slaves) {
+        for (size_t i=0; i<master.size(); ++i) {
+          startPos[slave[i]] = 0;
+          endPos[slave[i]] = 0;
+        }
+      }
 
       lastProbeDistance = vabs(endPos - startPos);
     }
