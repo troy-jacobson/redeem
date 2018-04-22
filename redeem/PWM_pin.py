@@ -25,43 +25,10 @@ import time
 import subprocess
 import os
 import logging
-import Adafruit_BBIO.PWM as PWM
 
 """
 """
-
-
 class PWM_pin:
-    def __init__(self, pin, frequency, duty_cycle):
-      try:
-        self.impl = PWM_pin_ada(pin, frequency, duty_cycle)
-        return
-      except:
-        logging.warning("Couldn't initialize PWM via Adafruit library.  Falling back.")
-      self.impl = PWM_pin_sys(pin, frequency, duty_cycle)
-
-    def set_frequency(self, freq):
-      self.impl.set_frequency(freq)
-
-    def set_value(self, value):
-      self.impl.set_value(value)
-
-if __name__ == '__main__':
-
-    p1 = PWM_pin("P9_14", 50, 0.1)
-    p2 = PWM_pin("P9_16", 50, 0.1)
-
-    while 1:
-        for i in range(100):
-            p1.set_value(0.1 + (i * 0.001))
-            p2.set_value(0.1 + (i * 0.001))
-            time.sleep(0.03)
-        for i in range(100):
-            p1.set_value(0.2 - (i * 0.001))
-            p2.set_value(0.2 - (i * 0.001))
-            time.sleep(0.03)
-
-class PWM_pin_sys:
     def __init__(self, pin, frequency, duty_cycle):
         if pin == "P9_14":
             self.chip = 0
@@ -109,20 +76,19 @@ class PWM_pin_sys:
         #logging.debug("Setting duty_cycle to "+str(duty_cycle))
         with open(path, "w") as f:
             f.write(str(duty_cycle))
-        if value == 0:
-          self.set_enabled(self, False)
 
-class PWM_pin_ada:
-    def __init__(self, pin, frequency, duty_cycle):
-        self.pin = pin
 
-        # Adafruit takes duty cycles as percentages
-        PWM.start(pin, duty_cycle * 100, frequency)
+if __name__ == '__main__':
 
-    def set_frequency(self, freq):
-        """ Set the PWM frequency for all fans connected on this PWM-chip """
-        PWM.set_frequency(self.pin, freq)
+    p1 = PWM_pin("P9_14", 50, 0.1)
+    p2 = PWM_pin("P9_16", 50, 0.1)
 
-    def set_value(self, value):
-        """ Set the amount of on-time from 0..1 """
-        PWM.set_duty_cycle(self.pin, value * 100)
+    while 1:
+        for i in range(100):
+            p1.set_value(0.1 + (i * 0.001))
+            p2.set_value(0.1 + (i * 0.001))
+            time.sleep(0.03)
+        for i in range(100):
+            p1.set_value(0.2 - (i * 0.001))
+            p2.set_value(0.2 - (i * 0.001))
+            time.sleep(0.03)
