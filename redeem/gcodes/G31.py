@@ -16,7 +16,7 @@ from redeem.Gcode import Gcode
 class G31(GCodeCommand):
 
     def execute(self, g):
-        gcodes = self.printer.config.get("Macros", "G31").split("\n")
+        gcodes = self.get_macro_steps()
         self.printer.path_planner.wait_until_done()
         for gcode in gcodes:        
             G = Gcode({"message": gcode, "parent": g})
@@ -37,6 +37,9 @@ class G31(GCodeCommand):
     def is_buffered(self):
         return True
 
+    def get_macro_steps(self):
+        return self.printer.config.get("Macros", "G31").split("\n")
+        
     def get_test_gcodes(self):
         return ["G31"]
 

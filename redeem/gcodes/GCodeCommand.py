@@ -55,6 +55,9 @@ class GCodeCommand(object):
         """ The class name of the gcode """
         return type(self).__name__
 
+    def get_macro_steps(self):
+        return None
+
     def get_test_gcodes(self):
         """ List of gcode strings for nose testing """
         return []

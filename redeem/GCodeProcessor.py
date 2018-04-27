@@ -101,6 +101,9 @@ class GCodeProcessor:
 
     def is_async(self, gcode):
         return gcode.command.is_async()
+    
+    def is_macro(self, gcode):
+        return gcode.command.get_macro_steps() is not None
 
     def synchronize(self, gcode):
         try:
@@ -130,6 +133,11 @@ class GCodeProcessor:
 
         # If an M116 is running, peek at the incoming Gcode
         if self.peek(gcode):
+            return
+        
+        if self.is_macro(gcode):
+            for mstep in gcode.command.get_macro_steps():
+                self.enqueue(gcode)
             return
 
         if self.is_async(gcode):
