@@ -146,6 +146,7 @@ class Heater(object):
         self.reported_temp = 0
         self.new_reported_temp = 0
         self.temperatures = [self.current_temp]
+        self.time_diff = 0
         self.enabled = True
         self.t = Thread(target=self.keep_temperature, name=self.name)
         self.t.start()
@@ -160,7 +161,10 @@ class Heater(object):
 
                 workingTemps = self.temperatures[-self.avg:]
                 workingTemps.sort()
-                self.new_reported_temp = np.average(workingTemps[1:-2])
+                if len(workingTemps) > 3:
+		    self.new_reported_temp = np.average(workingTemps[1:-2])
+                else:
+                    self.new_reported_temp = 0
 
                 self.error = self.target_temp-self.new_reported_temp
                 self.errors.append(self.error)
@@ -178,7 +182,7 @@ class Heater(object):
                     power = self.Kp*(self.error + (1.0/self.Ti)*integral + self.Td*derivative)  
                     power = max(min(power, self.max_power, 1.0), 0.0)                         # Normalize to 0, max
                     #if self.name =="E":
-                    #    logging.debug("Err: {0:.3f}, der: {1:.4f} int: {2:.2f}".format(self.error, derivative, integral))
+                    #logging.info("Err: {0:.3f}, der: {1:.4f} int: {2:.2f}".format(self.error, derivative, integral))
 
                 # Run safety checks
                 self.time_diff = self.current_time-self.prev_time
@@ -190,7 +194,7 @@ class Heater(object):
 
                 self.reported_temp = self.new_reported_temp
                 # Set temp if temperature is OK
-                if not self.extruder_error and self.current_temp > 0:
+                if not self.extruder_error and self.target_temp > 0:
                     self.mosfet.set_power(power)
                 else:
                     self.mosfet.set_power(0)        
@@ -203,26 +207,28 @@ class Heater(object):
         """ Get the derivative of the temperature"""
         # Using temperature and not error for calculating derivative
         # gets rid of the derivative kick. dT/dt
-        der = (self.reported_temp-self.reported_new_reported_temp)/self.time_diff
+        der = (self.reported_temp-self.new_reported_temp)/self.time_diff if self.time_diff > 0 else 0
         self.averages.append(der)
         if len(self.averages) > 11:
             self.averages.pop(0)
         #if self.name =="E":
-        #    logging.debug(self.averages)
+        #logging.debug("d: {0}".format(self.averages))
         return np.average(self.averages)
 
     def get_error_integral(self):
+        #logging.info("err: {} td: {}".format(self.error, self.time_diff))
         """ Calculate and return the error integral """
         self.error_integral += self.error*self.time_diff
         # Avoid windup by clippping the integral part
         # to teh reciprocal of the integral term
         self.error_integral = np.clip(self.error_integral, 0, self.max_power*self.Ti/self.Kp)
+        #logging.debug("i: {0}".format(self.error_integral))
         return self.error_integral
 
     def check_temperature_error(self):
         """ Check the temperatures, make sure they are sane.
         Sound the alarm if something is wrong """
-        if len(self.temperatures) < 2:
+        if len(self.temperatures) < 5:
             return
         temp_delta = self.reported_temp - (self.temperatures[-1]+self.temperatures[-2])/2
         # Check that temperature is not rising too quickly
