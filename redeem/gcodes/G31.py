@@ -16,12 +16,13 @@ from redeem.Gcode import Gcode
 class G31(GCodeCommand):
 
     def execute(self, g):
-        gcodes = self.get_macro_steps()
-        self.printer.path_planner.wait_until_done()
-        for gcode in gcodes:        
-            G = Gcode({"message": gcode, "parent": g})
-            self.printer.processor.execute(G)
-            self.printer.path_planner.wait_until_done()
+        return
+        #gcodes = self.get_macro_steps()
+        #self.printer.path_planner.wait_until_done()
+        #for gcode in gcodes:        
+            #G = Gcode({"message": gcode, "parent": g})
+            #self.printer.processor.execute(G)
+            #self.printer.path_planner.wait_until_done()
 
     def get_description(self):
         return "Dock sled"

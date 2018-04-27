@@ -137,8 +137,7 @@ class GCodeProcessor:
         
         if self.is_macro(gcode):
             for mstep in gcode.command.get_macro_steps():
-                self.enqueue(gcode)
-            return
+                self.enqueue(Gcode({"message": mstep, "parent": gcode}))
 
         if self.is_async(gcode):
             self.sync_event_needed = True

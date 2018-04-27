@@ -219,6 +219,9 @@ class G30_1(GCodeCommand):
     def is_buffered(self):
         return True
 
+    def is_async(self):
+        return True
+
     # What should be put here?
     def get_test_gcodes(self):
         return ["G30.1", "G30.1 P0", "G30.1 P1 X10 Y10 Z10"]
