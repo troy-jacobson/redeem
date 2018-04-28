@@ -610,8 +610,10 @@ class Redeem:
         """ When a new event comes in, execute the pending gcode """
         try:
             while RedeemIsRunning:
+                logging.debug ("eventloop " + name)
                 # Returns False on timeout, else True
-                if self.printer.path_planner.wait_until_sync_event():
+                numberOfEvents = self.printer.path_planner.wait_until_sync_event()
+                for e in range(numberOfEvents):
                     try:
                         gcode = queue.get(block=True, timeout=1)
                     except Queue.Empty:
@@ -620,6 +622,8 @@ class Redeem:
                     self._synchronize(gcode)
                     logging.info("Event handled for " + gcode.code() + " from " + name + " " + gcode.message)
                     queue.task_done()
+                else:
+                    logging.debug ("eventloop {} not in wait_until_sync_event() with queue size of {}".format(name, queue.qsize()))
         except Exception:
             logging.exception("Exception in {} eventloop: ".format(name))
 

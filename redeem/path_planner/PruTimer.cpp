@@ -638,6 +638,8 @@ int PruTimer::waitUntilSync() {
     int ret;
 	// Wait until the PRU sends a sync event.
     ret = prussdrv_pru_wait_event(PRU_EVTOUT_1, 1000);
+    if (ret == 255)
+        return -1;
     if(ret != 0)
     	prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT); 
     return ret;

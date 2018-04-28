@@ -516,7 +516,7 @@ unsigned int prussdrv_pru_wait_event(unsigned int host_interrupt, unsigned int t
 		/* Don't rely on the value of tv now! */
 		
 		if (retval == -1)
-			return 0; //Error
+			return 255; //Error
 		else if(retval==0) {
 			
 			return 0; //Timeout

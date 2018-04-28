@@ -137,8 +137,8 @@ class GCodeProcessor:
         
         if self.is_macro(gcode):
             for mstep in gcode.command.get_macro_steps():
-                self.enqueue(Gcode({"message": mstep}))
-                #self.enqueue(Gcode({"message": mstep, "parent": gcode}))
+                #self.enqueue(Gcode({"message": mstep}))
+                self.enqueue(Gcode({"message": mstep, "parent": gcode}))
 
         if self.is_async(gcode):
             self.sync_event_needed = True
@@ -154,6 +154,7 @@ class GCodeProcessor:
             self.printer.commands.put(gcode)
 
             if self.is_sync(gcode):
+                logging.info("is_sync sync_commands.put()" + gcode.message)
                 # Yes, it goes into both queues!
                 self.printer.sync_commands.put(gcode)
         else:
@@ -204,6 +205,7 @@ class GCodeProcessor:
         async_gcode.command = async
 
         self.printer.commands.put(buffered_gcode)
+	logging.info("wait_for_async_queue sync_commands.put()" + async_gcode.message)
         self.printer.sync_commands.put(async_gcode)
         self.printer.async_commands.put(async_gcode)
         logging.info("done queueing buffered-to-async sync event")
