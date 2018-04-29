@@ -106,8 +106,8 @@ class EndStop:
         logging.info("End Stop " + self.name + " hit!")
         if "toggle" in self.printer.comms:
             self.printer.comms["toggle"].send_message("End stop {} hit!".format(self.name))
-        #if "octoprint" in self.printer.comms:
-            #self.printer.comms["octoprint"].send_message("End stop {} hit!".format(self.name))
+        if "octoprint" in self.printer.comms:
+            self.printer.comms["octoprint"].send_message("End stop {} hit!".format(self.name))
     
 if __name__ == "__main__":
     print("Test endstops")

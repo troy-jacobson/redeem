@@ -610,7 +610,6 @@ class Redeem:
         """ When a new event comes in, execute the pending gcode """
         try:
             while RedeemIsRunning:
-                logging.debug ("eventloop " + name)
                 # Returns False on timeout, else True
                 numberOfEvents = self.printer.path_planner.wait_until_sync_event()
                 for e in range(numberOfEvents):

@@ -80,7 +80,6 @@ class Pipe:
     def get_message(self):
         """ Loop that gets messages and pushes them on the queue """
         while self.running:
-            logging.debug("get_message")
             r, w, x = select.select([self.rd], [], [], 1.0)
             if r:
                 try:
