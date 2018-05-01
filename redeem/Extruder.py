@@ -147,6 +147,12 @@ class Heater(object):
         self.new_reported_temp = 0
         self.temperatures = [self.current_temp]
         self.time_diff = 0
+        self.max_rize_track = 0
+        self.min_fall_track = 0
+        self.elim_alarms = 0
+        self.over5 = 0
+        self.over10 = 0
+        self.over15 = 0
         self.enabled = True
         self.t = Thread(target=self.keep_temperature, name=self.name)
         self.t.start()
@@ -161,10 +167,24 @@ class Heater(object):
 
                 workingTemps = self.temperatures[-self.avg:]
                 workingTemps.sort()
+                isItBetter = 0
                 if len(workingTemps) > 3:
 		    self.new_reported_temp = np.average(workingTemps[1:-2])
+                    logging.info("{} All working temps: {}".format(self.name, workingTemps))
+                    logging.info("{} Averaged working temps: {}".format(self.name, workingTemps[1:-2]))
+                    isItBetter = abs(self.new_reported-temp - self.temperatures[-1])
                 else:
                     self.new_reported_temp = 0
+
+                if isItBetter >= 5:
+                  if isItBetter >= 15:
+                    self.over15 += 1
+                  elif isItBetter >= 10:
+                    self.over10 += 1
+                  else:
+                    self.over5 += 1
+                  logging.info("Smoothing {} current temp {}C to {}C".format(self.name, self.temperatures[-1], self.new_reported_temp))
+                  logging.info("Smoothing has helped {}  {} times at 5C, {} times at 10C, and {} times over 15C".format(self.name, self.over5, self.over10, self.over15))
 
                 self.error = self.target_temp-self.new_reported_temp
                 self.errors.append(self.error)
@@ -229,6 +249,16 @@ class Heater(object):
         if len(self.temperatures) < 5:
             return
         temp_delta = self.reported_temp - (self.temperatures[-1]+self.temperatures[-2])/2
+        old_temp_delta = self.temperatures[-1] - self.temperatures[-2]
+        if temp_delta > self.max_rise_track :
+            logging.info("Smoothing: {} hit a max rize of {} avg:{} t-2:{}, t-1:{}".format(self.name, temp_delta, self.reported_temp, self.temperatures[-2], self.temperatures[-1]))
+            self.max_rise_track = temp_delta
+        if temp_delta < self.min_fall_track :
+            logging.info("Smoothing: {} hit a min fall of {} avg:{} t-2:{}, t-1:{}".format(self.name, temp_delta, self.reported_temp, self.temperatures[-2], self.temperatures[-1]))
+            self.min_fall_track = temp_delta
+        if old_temp_delta > self.max_temp_rise or old_temp_delta < -self.max_temp_fall:
+            self.elim_alarms += 1
+            logging.info("Smoothing eliminated a temperature alarm for {}.  Accumulated count: {}".format(self.name, self.elim_alarms))
         # Check that temperature is not rising too quickly
         if temp_delta > self.max_temp_rise:
             a = Alarm(Alarm.HEATER_RISING_FAST,
