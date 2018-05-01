@@ -180,9 +180,11 @@ class PT100(TemperatureSensor):
         """ Convert the voltage to a resistance value """
         if voltage == 0 or (abs(voltage - 1.8) < 0.0001):
             return 10000000.0
-        vscale = 1.615*10
-        rr = self.pullup / ((vscale / voltage) - 1.0)
-        logging.info("PT100 voltage: {0} resistance: {1}".format(voltage, rr))
+        #vscale = 1.615*10
+        vscale = 3.375 * 975/(975+978)
+        sv = vscale / (voltage/10)
+        rr = self.pullup / (sv - 1.0)
+        #logging.info("PT100 voltage: {0} scaled: {1} resistance: {2}".format(voltage, sv, rr))
         return rr
 
 
