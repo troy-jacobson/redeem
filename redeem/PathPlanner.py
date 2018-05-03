@@ -172,8 +172,8 @@ class PathPlanner:
         logging.info("wait_until_sync_event() returned {}".format(rv))
         if rv < 0:
 	    logging.error("wait_until_sync_event() failed")
-            return 0
-        return rv
+            return False
+        return rv > 0
 
     def clear_sync_event(self):
         """ Resumes/Clears a pending sync event """
