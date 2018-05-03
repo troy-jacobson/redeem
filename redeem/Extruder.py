@@ -147,7 +147,7 @@ class Heater(object):
         self.new_reported_temp = 0
         self.temperatures = [self.current_temp]
         self.time_diff = 0
-        self.max_rize_track = 0
+        self.max_rise_track = 0
         self.min_fall_track = 0
         self.elim_alarms = 0
         self.over5 = 0
@@ -170,9 +170,9 @@ class Heater(object):
                 isItBetter = 0
                 if len(workingTemps) > 3:
 		    self.new_reported_temp = np.average(workingTemps[1:-2])
-                    logging.info("{} All working temps: {}".format(self.name, workingTemps))
-                    logging.info("{} Averaged working temps: {}".format(self.name, workingTemps[1:-2]))
-                    isItBetter = abs(self.new_reported-temp - self.temperatures[-1])
+                    # logging.info("{} All working temps: {}".format(self.name, workingTemps))
+                    # logging.info("{} Averaged working temps: {}".format(self.name, workingTemps[1:-2]))
+                    isItBetter = abs(self.new_reported_temp - self.temperatures[-1])
                 else:
                     self.new_reported_temp = 0
 
